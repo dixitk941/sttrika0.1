@@ -16,8 +16,8 @@ const BestSellers = () => {
         <Product
           _id="1011"
           img={bestSellerOne}
-          productName="Flower Base"
-          price="35.00"
+          productName="Women Dress "
+          price="435.00"
           color="Blank and White"
           badge={true}
           des="Lorem ipsum dolor sit amet consectetur adipisicing elit. Hic excepturi quibusdam odio deleniti reprehenderit facilis."
@@ -25,7 +25,7 @@ const BestSellers = () => {
         <Product
           _id="1012"
           img={bestSellerTwo}
-          productName="New Backpack"
+          productName="New Women Dress"
           price="180.00"
           color="Gray"
           badge={false}
@@ -34,8 +34,8 @@ const BestSellers = () => {
         <Product
           _id="1013"
           img={bestSellerThree}
-          productName="Household materials"
-          price="25.00"
+          productName=" Women Dress"
+          price="425.00"
           color="Mixed"
           badge={true}
           des="Lorem ipsum dolor sit amet consectetur adipisicing elit. Hic excepturi quibusdam odio deleniti reprehenderit facilis."
@@ -43,7 +43,7 @@ const BestSellers = () => {
         <Product
           _id="1014"
           img={bestSellerFour}
-          productName="Travel Bag"
+          productName="Women Dress  "
           price="220.00"
           color="Black"
           badge={false}

@@ -16,8 +16,8 @@ const SpecialOffers = () => {
         <Product
           _id="1101"
           img={spfOne}
-          productName="Cap for Boys"
-          price="35.00"
+          productName="Women Dress"
+          price="435.00"
           color="Blank and White"
           badge={true}
           des="Lorem ipsum dolor sit amet consectetur adipisicing elit. Hic excepturi quibusdam odio deleniti reprehenderit facilis."
@@ -25,8 +25,8 @@ const SpecialOffers = () => {
         <Product
           _id="1102"
           img={spfTwo}
-          productName="Tea Table"
-          price="180.00"
+          productName="Women Dress"
+          price="480.00"
           color="Gray"
           badge={true}
           des="Lorem ipsum dolor sit amet consectetur adipisicing elit. Hic excepturi quibusdam odio deleniti reprehenderit facilis."
@@ -34,8 +34,8 @@ const SpecialOffers = () => {
         <Product
           _id="1103"
           img={spfThree}
-          productName="Headphones"
-          price="25.00"
+          productName="Women Dress"
+          price="425.00"
           color="Mixed"
           badge={true}
           des="Lorem ipsum dolor sit amet consectetur adipisicing elit. Hic excepturi quibusdam odio deleniti reprehenderit facilis."
@@ -43,7 +43,7 @@ const SpecialOffers = () => {
         <Product
           _id="1104"
           img={spfFour}
-          productName="Sun glasses"
+          productName="Women Dress "
           price="220.00"
           color="Black"
           badge={true}
