@@ -1,50 +1,66 @@
 import React, { useState } from "react";
 import { BsCheckCircleFill } from "react-icons/bs";
-import { Link } from "react-router-dom";
-// import { logoLight } from "../../assets/images";
+import { Link, useNavigate } from "react-router-dom";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "./firebaseConfig";  // Import Firebase Auth
+import { logoLight } from "../../assets/images";
 
 const SignIn = () => {
   // ============= Initial State Start here =============
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  // ============= Initial State End here ===============
-  // ============= Error Msg Start here =================
   const [errEmail, setErrEmail] = useState("");
   const [errPassword, setErrPassword] = useState("");
-
-  // ============= Error Msg End here ===================
   const [successMsg, setSuccessMsg] = useState("");
+  const [firebaseErr, setFirebaseErr] = useState("");  // Firebase error message
+  const navigate = useNavigate();  // For navigation after successful login
+
   // ============= Event Handler Start here =============
   const handleEmail = (e) => {
     setEmail(e.target.value);
     setErrEmail("");
+    setFirebaseErr("");  // Reset Firebase error
   };
+  
   const handlePassword = (e) => {
     setPassword(e.target.value);
     setErrPassword("");
+    setFirebaseErr("");  // Reset Firebase error
   };
-  // ============= Event Handler End here ===============
-  const handleSignUp = (e) => {
+
+  const handleSignIn = (e) => {
     e.preventDefault();
 
+    // Validate input fields
     if (!email) {
       setErrEmail("Enter your email");
     }
-
     if (!password) {
-      setErrPassword("Create a password");
+      setErrPassword("Enter your password");
     }
-    // ============== Getting the value ==============
+
+    // If both email and password are filled
     if (email && password) {
-      setSuccessMsg(
-        `Hello dear, Thank you for your attempt. We are processing to validate your access. Till then stay connected and additional assistance will be sent to you by your mail at ${email}`
-      );
-      setEmail("");
-      setPassword("");
+      // Sign in using Firebase Auth
+      signInWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          setSuccessMsg(`Welcome back, ${userCredential.user.email}`);
+          // Clear input fields
+          setEmail("");
+          setPassword("");
+          setTimeout(() => {
+            navigate("/");  // Navigate to dashboard or other page after sign in
+          }, 1500);
+        })
+        .catch((error) => {
+          setFirebaseErr(error.message);  // Display Firebase error message
+        });
     }
   };
+
   return (
     <div className="w-full h-screen flex items-center justify-center">
+      <div className="w-1/2 hidden lgl:inline-flex h-full text-white">
       <div className="w-1/2 hidden lgl:inline-flex h-full text-white">
         <div className="w-[450px] h-full bg-primeColor px-10 flex flex-col gap-6 justify-center">
           <Link to="/">
@@ -114,6 +130,7 @@ const SignIn = () => {
           </div>
         </div>
       </div>
+      </div>
       <div className="w-full lgl:w-1/2 h-full">
         {successMsg ? (
           <div className="w-full lgl:w-[500px] h-full flex flex-col justify-center">
@@ -121,10 +138,7 @@ const SignIn = () => {
               {successMsg}
             </p>
             <Link to="/signup">
-              <button
-                className="w-full h-10 bg-primeColor text-gray-200 rounded-md text-base font-titleFont font-semibold 
-            tracking-wide hover:bg-black hover:text-white duration-300"
-              >
+              <button className="w-full h-10 bg-primeColor text-gray-200 rounded-md text-base font-titleFont font-semibold tracking-wide hover:bg-black hover:text-white duration-300">
                 Sign Up
               </button>
             </Link>
@@ -138,9 +152,7 @@ const SignIn = () => {
               <div className="flex flex-col gap-3">
                 {/* Email */}
                 <div className="flex flex-col gap-.5">
-                  <p className="font-titleFont text-base font-semibold text-gray-600">
-                    Work Email
-                  </p>
+                  <p className="font-titleFont text-base font-semibold text-gray-600">Work Email</p>
                   <input
                     onChange={handleEmail}
                     value={email}
@@ -158,9 +170,7 @@ const SignIn = () => {
 
                 {/* Password */}
                 <div className="flex flex-col gap-.5">
-                  <p className="font-titleFont text-base font-semibold text-gray-600">
-                    Password
-                  </p>
+                  <p className="font-titleFont text-base font-semibold text-gray-600">Password</p>
                   <input
                     onChange={handlePassword}
                     value={password}
@@ -176,8 +186,16 @@ const SignIn = () => {
                   )}
                 </div>
 
+                {/* Firebase error message */}
+                {firebaseErr && (
+                  <p className="text-sm text-red-500 font-titleFont font-semibold px-4">
+                    <span className="font-bold italic mr-1">!</span>
+                    {firebaseErr}
+                  </p>
+                )}
+
                 <button
-                  onClick={handleSignUp}
+                  onClick={handleSignIn}
                   className="bg-primeColor hover:bg-black text-gray-200 hover:text-white cursor-pointer w-full text-base font-medium h-10 rounded-md  duration-300"
                 >
                   Sign In
@@ -185,9 +203,7 @@ const SignIn = () => {
                 <p className="text-sm text-center font-titleFont font-medium">
                   Don't have an Account?{" "}
                   <Link to="/signup">
-                    <span className="hover:text-blue-600 duration-300">
-                      Sign up
-                    </span>
+                    <span className="hover:text-blue-600 duration-300">Sign up</span>
                   </Link>
                 </p>
               </div>

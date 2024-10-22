@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import { BsCheckCircleFill } from "react-icons/bs";
 import { Link } from "react-router-dom";
-// import { logoLight } from "../../assets/images";
+import { logoLight } from "../../assets/images";
+import { auth } from "./firebaseConfig"; // Import auth from firebase.js
+import { createUserWithEmailAndPassword } from "firebase/auth"; // Firebase method for signup
 
 const SignUp = () => {
-  // ============= Initial State Start here =============
+  // States (as before)
   const [clientName, setClientName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -14,8 +16,8 @@ const SignUp = () => {
   const [country, setCountry] = useState("");
   const [zip, setZip] = useState("");
   const [checked, setChecked] = useState(false);
-  // ============= Initial State End here ===============
-  // ============= Error Msg Start here =================
+
+  // Error and Success Messages
   const [errClientName, setErrClientName] = useState("");
   const [errEmail, setErrEmail] = useState("");
   const [errPhone, setErrPhone] = useState("");
@@ -24,111 +26,70 @@ const SignUp = () => {
   const [errCity, setErrCity] = useState("");
   const [errCountry, setErrCountry] = useState("");
   const [errZip, setErrZip] = useState("");
-  // ============= Error Msg End here ===================
   const [successMsg, setSuccessMsg] = useState("");
-  // ============= Event Handler Start here =============
-  const handleName = (e) => {
-    setClientName(e.target.value);
-    setErrClientName("");
-  };
-  const handleEmail = (e) => {
-    setEmail(e.target.value);
-    setErrEmail("");
-  };
-  const handlePhone = (e) => {
-    setPhone(e.target.value);
-    setErrPhone("");
-  };
-  const handlePassword = (e) => {
-    setPassword(e.target.value);
-    setErrPassword("");
-  };
-  const handleAddress = (e) => {
-    setAddress(e.target.value);
-    setErrAddress("");
-  };
-  const handleCity = (e) => {
-    setCity(e.target.value);
-    setErrCity("");
-  };
-  const handleCountry = (e) => {
-    setCountry(e.target.value);
-    setErrCountry("");
-  };
-  const handleZip = (e) => {
-    setZip(e.target.value);
-    setErrZip("");
-  };
-  // ============= Event Handler End here ===============
-  // ================= Email Validation start here =============
+  const handleName = (e) => setClientName(e.target.value);
+  const handleEmail = (e) => setEmail(e.target.value);
+  const handlePhone = (e) => setPhone(e.target.value);
+  const handlePassword = (e) => setPassword(e.target.value);
+  const handleAddress = (e) => setAddress(e.target.value);
+  const handleCity = (e) => setCity(e.target.value);
+  const handleCountry = (e) => setCountry(e.target.value);
+  const handleZip = (e) => setZip(e.target.value);
+
+
+  // Event Handlers (as before)
+
+  // Email Validation
   const EmailValidation = (email) => {
     return String(email)
       .toLowerCase()
       .match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i);
   };
-  // ================= Email Validation End here ===============
 
+  // Handle SignUp
   const handleSignUp = (e) => {
     e.preventDefault();
+
     if (checked) {
-      if (!clientName) {
-        setErrClientName("Enter your name");
-      }
-      if (!email) {
-        setErrEmail("Enter your email");
-      } else {
-        if (!EmailValidation(email)) {
-          setErrEmail("Enter a Valid email");
-        }
-      }
-      if (!phone) {
-        setErrPhone("Enter your phone number");
-      }
-      if (!password) {
-        setErrPassword("Create a password");
-      } else {
-        if (password.length < 6) {
-          setErrPassword("Passwords must be at least 6 characters");
-        }
-      }
-      if (!address) {
-        setErrAddress("Enter your address");
-      }
-      if (!city) {
-        setErrCity("Enter your city name");
-      }
-      if (!country) {
-        setErrCountry("Enter the country you are residing");
-      }
-      if (!zip) {
-        setErrZip("Enter the zip code of your area");
-      }
-      // ============== Getting the value ==============
-      if (
-        clientName &&
-        email &&
-        EmailValidation(email) &&
-        password &&
-        password.length >= 6 &&
-        address &&
-        city &&
-        country &&
-        zip
-      ) {
-        setSuccessMsg(
-          `Hello dear ${clientName}, Welcome you to Sttrika Admin panel. We received your Sign up request. We are processing to validate your access. Till then stay connected and additional assistance will be sent to you by your mail at ${email}`
-        );
-        setClientName("");
-        setEmail("");
-        setPhone("");
-        setPassword("");
-        setAddress("");
-        setCity("");
-        setCountry("");
-        setZip("");
+      // Validation (as before)
+      if (!clientName) setErrClientName("Enter your name");
+      if (!email) setErrEmail("Enter your email");
+      else if (!EmailValidation(email)) setErrEmail("Enter a valid email");
+      if (!phone) setErrPhone("Enter your phone number");
+      if (!password) setErrPassword("Create a password");
+      else if (password.length < 6) setErrPassword("Passwords must be at least 6 characters");
+      if (!address) setErrAddress("Enter your address");
+      if (!city) setErrCity("Enter your city");
+      if (!country) setErrCountry("Enter your country");
+      if (!zip) setErrZip("Enter your zip code");
+
+      // If all fields are valid
+      if (clientName && email && password && password.length >= 6 && address && city && country && zip) {
+        // Create user using Firebase Authentication
+        createUserWithEmailAndPassword(auth, email, password)
+          .then((userCredential) => {
+            // Signed in
+            const user = userCredential.user;
+            setSuccessMsg(`Hello ${clientName}, your account has been created! Check your email (${email}) for confirmation.`);
+            // Clear form
+            setClientName("");
+            setEmail("");
+            setPhone("");
+            setPassword("");
+            setAddress("");
+            setCity("");
+            setCountry("");
+            setZip("");
+          })
+          .catch((error) => {
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            setErrEmail(errorMessage);
+          });
       }
     }
   };
+
   return (
     <div className="w-full h-screen flex items-center justify-start">
       <div className="w-1/2 hidden lgl:inline-flex h-full text-white">

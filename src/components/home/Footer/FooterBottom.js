@@ -13,7 +13,7 @@ const FooterBottom = () => {
           <a href="https://neocodenex.tech/" target="_blank" rel="noreferrer">
             <span className="ml-1 font-medium group-hover:text-primeColor">
               Powered by dixitk941 & Neocodenex
-                         </span>
+            </span>
           </a>
         </p>
       </div>
