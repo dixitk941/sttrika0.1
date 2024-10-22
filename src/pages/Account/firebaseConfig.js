@@ -3,17 +3,18 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDs4A_QVVlCykHkGVUi9dO6AlRy1I-yrq8",
+    apiKey: "AIzaSyAAjDM52pKftwpRjAuWmyybk0fJDYblWYk",
 
-    authDomain: "sttrikaofficial.firebaseapp.com",
+    authDomain: "sttrika-official.firebaseapp.com",
   
-    projectId: "sttrikaofficial",
+    projectId: "sttrika-official",
   
-    storageBucket: "sttrikaofficial.appspot.com",
+    storageBucket: "sttrika-official.appspot.com",
   
-    messagingSenderId: "879169838900",
+    messagingSenderId: "276195318783",
   
-    appId: "1:879169838900:web:ff004b0c6e7092cc8a8f61"
+    appId: "1:276195318783:web:3dd5735fd9145b752fa5ca"
+  
   
 };
 
