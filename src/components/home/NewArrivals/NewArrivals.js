@@ -53,9 +53,9 @@ const NewArrivals = () => {
         <div className="px-2">
           <Product
             _id="100001"
-            img={newArrOne}
-            productName="Round Table Clock"
-            price="44.00"
+            img={newArrFour}
+            productName="Women Tiered Yellow, Light Green Dress"
+            price="444.00"
             color="Black"
             badge={true}
             des="Lorem ipsum dolor sit amet consectetur adipisicing elit. Hic excepturi quibusdam odio deleniti reprehenderit facilis."
@@ -64,8 +64,8 @@ const NewArrivals = () => {
         <div className="px-2">
           <Product
             _id="100002"
-            img={newArrTwo}
-            productName="Smart Watch"
+            img={newArrThree}
+            productName="Women Gown Pink Dress"
             price="250.00"
             color="Black"
             badge={true}
@@ -75,9 +75,9 @@ const NewArrivals = () => {
         <div className="px-2">
           <Product
             _id="100003"
-            img={newArrThree}
-            productName="cloth Basket"
-            price="80.00"
+            img={newArrOne}
+            productName="Women A-line Dark Blue, Light Blue Dress"
+            price="480.00"
             color="Mixed"
             badge={true}
             des="Lorem ipsum dolor sit amet consectetur adipisicing elit. Hic excepturi quibusdam odio deleniti reprehenderit facilis."
@@ -86,9 +86,9 @@ const NewArrivals = () => {
         <div className="px-2">
           <Product
             _id="100004"
-            img={newArrFour}
-            productName="Funny toys for babies"
-            price="60.00"
+            img={newArrTwo}
+            productName="Women A-line Dark Blue, Light Blue Dress"
+            price="460.00"
             color="Mixed"
             badge={false}
             des="Lorem ipsum dolor sit amet consectetur adipisicing elit. Hic excepturi quibusdam odio deleniti reprehenderit facilis."
@@ -98,7 +98,7 @@ const NewArrivals = () => {
           <Product
             _id="100005"
             img={newArrTwo}
-            productName="Funny toys for babies"
+            productName="Women A-line Dark Blue, Light Blue Dress"
             price="60.00"
             color="Mixed"
             badge={false}

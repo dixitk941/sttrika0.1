@@ -9,7 +9,7 @@ const Contact = () => {
     setPrevLocation(location.state.data);
   }, [location]);
 
-  const [clientName, setclientName] = useState("");
+  const [clientName, setClientName] = useState("");
   const [email, setEmail] = useState("");
   const [messages, setMessages] = useState("");
 
@@ -21,7 +21,7 @@ const Contact = () => {
   const [successMsg, setSuccessMsg] = useState("");
 
   const handleName = (e) => {
-    setclientName(e.target.value);
+    setClientName(e.target.value);
     setErrClientName("");
   };
   const handleEmail = (e) => {
@@ -41,7 +41,7 @@ const Contact = () => {
   };
   // ================= Email Validation End here ===============
 
-  const handlePost = (e) => {
+  const handlePost = async (e) => {
     e.preventDefault();
     if (!clientName) {
       setErrClientName("Enter your Name");
@@ -57,9 +57,28 @@ const Contact = () => {
       setErrMessages("Enter your Messages");
     }
     if (clientName && email && EmailValidation(email) && messages) {
-      setSuccessMsg(
-        `Thank you dear ${clientName}, Your messages has been received successfully. Futher details will sent to you by your email at ${email}.`
-      );
+      const formData = new FormData();
+      formData.append("access_key", "84fd12a9-d4eb-4a40-98fc-00af951048dc"); // Replace with your Web3Forms key
+      formData.append("name", clientName);
+      formData.append("email", email);
+      formData.append("message", messages);
+
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setSuccessMsg(
+          `Thank you dear ${clientName}, Your messages have been received successfully. Further details will be sent to you by email at ${email}.`
+        );
+        setClientName("");
+        setEmail("");
+        setMessages("");
+      } else {
+        setErrMessages("Something went wrong. Please try again.");
+      }
     }
   };
 
@@ -69,7 +88,7 @@ const Contact = () => {
       {successMsg ? (
         <p className="pb-20 w-96 font-medium text-green-500">{successMsg}</p>
       ) : (
-        <form className="pb-20">
+        <form className="pb-20" onSubmit={handlePost}>
           <h1 className="font-titleFont font-semibold text-3xl">
             Fill up a Form
           </h1>
@@ -84,6 +103,7 @@ const Contact = () => {
                 className="w-full py-1 border-b-2 px-2 text-base font-medium placeholder:font-normal placeholder:text-sm outline-none focus-within:border-primeColor"
                 type="text"
                 placeholder="Enter your name here"
+                name="name"
               />
               {errClientName && (
                 <p className="text-red-500 text-sm font-titleFont font-semibold mt-1 px-2 flex items-center gap-1">
@@ -101,7 +121,8 @@ const Contact = () => {
                 value={email}
                 className="w-full py-1 border-b-2 px-2 text-base font-medium placeholder:font-normal placeholder:text-sm outline-none focus-within:border-primeColor"
                 type="email"
-                placeholder="Enter your name here"
+                placeholder="Enter your email here"
+                name="email"
               />
               {errEmail && (
                 <p className="text-red-500 text-sm font-titleFont font-semibold mt-1 px-2 flex items-center gap-1">
@@ -121,7 +142,8 @@ const Contact = () => {
                 rows="3"
                 className="w-full py-1 border-b-2 px-2 text-base font-medium placeholder:font-normal placeholder:text-sm outline-none focus-within:border-primeColor resize-none"
                 type="text"
-                placeholder="Enter your name here"
+                placeholder="Enter your message here"
+                name="message"
               ></textarea>
               {errMessages && (
                 <p className="text-red-500 text-sm font-titleFont font-semibold mt-1 px-2 flex items-center gap-1">
@@ -131,7 +153,7 @@ const Contact = () => {
               )}
             </div>
             <button
-              onClick={handlePost}
+              type="submit"
               className="w-44 bg-primeColor text-gray-200 h-10 font-titleFont text-base tracking-wide font-semibold hover:bg-black hover:text-white duration-200"
             >
               Post
