@@ -1,25 +1,58 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Breadcrumbs from "../../components/pageProps/Breadcrumbs";
 import { resetCart } from "../../redux/orebiSlice";
 import { emptyCart } from "../../assets/images/index";
 import ItemCard from "./ItemCard";
+import { getFirestore, collection, addDoc, doc, getDoc } from "firebase/firestore";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { initializeApp } from "firebase/app";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
+// Your Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyAAjDM52pKftwpRjAuWmyybk0fJDYblWYk",
+  authDomain: "sttrika-official.firebaseapp.com",
+  projectId: "sttrika-official",
+  storageBucket: "sttrika-official.appspot.com",
+  messagingSenderId: "276195318783",
+  appId: "1:276195318783:web:3dd5735fd9145b752fa5ca",
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+const storage = getStorage(app);
 
 const Cart = () => {
   const dispatch = useDispatch();
   const products = useSelector((state) => state.orebiReducer.products);
   const [totalAmt, setTotalAmt] = useState("");
   const [shippingCharge, setShippingCharge] = useState("");
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        setUser(null);
+      }
+    });
+  }, []);
+
   useEffect(() => {
     let price = 0;
-    products.map((item) => {
+    products.forEach((item) => {
       price += item.price * item.quantity;
-      return price;
     });
     setTotalAmt(price);
   }, [products]);
+
   useEffect(() => {
     if (totalAmt <= 200) {
       setShippingCharge(30);
@@ -29,8 +62,56 @@ const Cart = () => {
       setShippingCharge(20);
     }
   }, [totalAmt]);
+
+  const uploadImage = async (image) => {
+    if (!image) {
+      throw new Error("No image provided");
+    }
+    const storageRef = ref(storage, `images/${image.name}`);
+    await uploadBytes(storageRef, image);
+    const url = await getDownloadURL(storageRef);
+    return url;
+  };
+
+  const handleCheckout = async () => {
+    if (user) {
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const productDetails = await Promise.all(
+            products.map(async (product) => {
+              const imageUrl = await uploadImage(product.image);
+              return {
+                ...product,
+                imageUrl,
+              };
+            })
+          );
+
+          await addDoc(collection(db, "orders"), {
+            userId: user.uid,
+            products: productDetails,
+            totalAmount: totalAmt,
+            shippingCharge: shippingCharge,
+            total: totalAmt + shippingCharge,
+            createdAt: new Date(),
+          });
+
+          navigate("/paymentgateway");
+        } else {
+          console.log("User data does not exist in Firestore");
+        }
+      } catch (error) {
+        console.error("Error processing checkout: ", error);
+      }
+    } else {
+      console.log("User not authenticated");
+      navigate("/login");
+    }
+  };
+
   return (
-    <div className="max-w-container mx-auto px-4">
+    <div className="w-full max-w-container mx-auto px-4">
       <Breadcrumbs title="Cart" />
       {products.length > 0 ? (
         <div className="pb-20">
@@ -92,11 +173,12 @@ const Cart = () => {
                 </p>
               </div>
               <div className="flex justify-end">
-                <Link to="/paymentgateway">
-                  <button className="w-52 h-10 bg-primeColor text-white hover:bg-black duration-300">
-                    Proceed to Checkout
-                  </button>
-                </Link>
+                <button
+                  onClick={handleCheckout}
+                  className="w-52 h-10 bg-primeColor text-white hover:bg-black duration-300"
+                >
+                  Proceed to Checkout
+                </button>
               </div>
             </div>
           </div>

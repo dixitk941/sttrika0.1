@@ -143,7 +143,9 @@ const HeaderBottom = () => {
                   </li>
                 </Link>
                 <li className="text-black px-4 py-1 border-b-[1px] border-b-gray-300 hover:border-b-black hover:text-black duration-300 cursor-pointer">
-                  Profile
+                    <Link to="/profile" className="block w-full h-full">
+                        Profile
+                    </Link>
                 </li>
                 <li className="text-black px-4 py-1 border-b-[1px] border-b-gray-300 hover:border-b-black hover:text-black duration-300 cursor-pointer">
                   Others

@@ -4,10 +4,12 @@ import { Link } from "react-router-dom";
 import { logoLight } from "../../assets/images";
 import { auth } from "./firebaseConfig"; // Import auth from firebase.js
 import { createUserWithEmailAndPassword } from "firebase/auth"; // Firebase method for signup
+import { db } from "./firebaseConfig"; // Import Firestore database
+import { doc, setDoc } from "firebase/firestore"; // Firestore methods
 
 const SignUp = () => {
   // States (as before)
-  const [clientName, setClientName] = useState("");
+  const [Name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -18,7 +20,7 @@ const SignUp = () => {
   const [checked, setChecked] = useState(false);
 
   // Error and Success Messages
-  const [errClientName, setErrClientName] = useState("");
+  const [errName, setErrName] = useState("");
   const [errEmail, setErrEmail] = useState("");
   const [errPhone, setErrPhone] = useState("");
   const [errPassword, setErrPassword] = useState("");
@@ -27,7 +29,8 @@ const SignUp = () => {
   const [errCountry, setErrCountry] = useState("");
   const [errZip, setErrZip] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
-  const handleName = (e) => setClientName(e.target.value);
+
+  const handleName = (e) => setName(e.target.value);
   const handleEmail = (e) => setEmail(e.target.value);
   const handlePhone = (e) => setPhone(e.target.value);
   const handlePassword = (e) => setPassword(e.target.value);
@@ -35,9 +38,6 @@ const SignUp = () => {
   const handleCity = (e) => setCity(e.target.value);
   const handleCountry = (e) => setCountry(e.target.value);
   const handleZip = (e) => setZip(e.target.value);
-
-
-  // Event Handlers (as before)
 
   // Email Validation
   const EmailValidation = (email) => {
@@ -47,12 +47,12 @@ const SignUp = () => {
   };
 
   // Handle SignUp
-  const handleSignUp = (e) => {
+  const handleSignUp = async (e) => {
     e.preventDefault();
 
     if (checked) {
       // Validation (as before)
-      if (!clientName) setErrClientName("Enter your name");
+      if (!Name) setErrName("Enter your name");
       if (!email) setErrEmail("Enter your email");
       else if (!EmailValidation(email)) setErrEmail("Enter a valid email");
       if (!phone) setErrPhone("Enter your phone number");
@@ -64,28 +64,38 @@ const SignUp = () => {
       if (!zip) setErrZip("Enter your zip code");
 
       // If all fields are valid
-      if (clientName && email && password && password.length >= 6 && address && city && country && zip) {
-        // Create user using Firebase Authentication
-        createUserWithEmailAndPassword(auth, email, password)
-          .then((userCredential) => {
-            // Signed in
-            const user = userCredential.user;
-            setSuccessMsg(`Hello ${clientName}, your account has been created! Check your email (${email}) for confirmation.`);
-            // Clear form
-            setClientName("");
-            setEmail("");
-            setPhone("");
-            setPassword("");
-            setAddress("");
-            setCity("");
-            setCountry("");
-            setZip("");
-          })
-          .catch((error) => {
-            const errorCode = error.code;
-            const errorMessage = error.message;
-            setErrEmail(errorMessage);
+      if (Name && email && password && password.length >= 6 && address && city && country && zip) {
+        try {
+          // Create user using Firebase Authentication
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          const user = userCredential.user;
+
+          // Save user details in Firestore
+          await setDoc(doc(db, "users", user.uid), {
+            Name,
+            // email,
+            phone,
+            address,
+            city,
+            country,
+            zip
           });
+
+          setSuccessMsg(`Hello ${Name}, your account has been created! Check your email (${email}) for confirmation.`);
+          
+          // Clear form
+          setName("");
+          setEmail("");
+          setPhone("");
+          setPassword("");
+          setAddress("");
+          setCity("");
+          setCountry("");
+          setZip("");
+        } catch (error) {
+          const errorMessage = error.message;
+          setErrEmail(errorMessage);
+        }
       }
     }
   };
@@ -94,15 +104,15 @@ const SignUp = () => {
     <div className="w-full h-screen flex items-center justify-start">
       <div className="w-1/2 hidden lgl:inline-flex h-full text-white">
         <div className="w-[450px] h-full bg-primeColor px-10 flex flex-col gap-6 justify-center">
-        <Link to="/" className="flex flex-col items-center text-center">
-          <span className="text-3xl font-bold tracking-wide text-white" style={{ fontFamily: 'Times New Roman, serif' }}>
-            Sttrika
-          </span>
-          <p className="text-lg font- text-white mt-2" style={{ fontFamily: 'Times New Roman, serif' }}>
-            Style Meets Comfort
-          </p>
-          <div className="border-b-4 border-white w-1/2 mt-1"></div>
-        </Link>
+          <Link to="/" className="flex flex-col items-center text-center">
+            <span className="text-3xl font-bold tracking-wide text-white" style={{ fontFamily: 'Times New Roman, serif' }}>
+              Sttrika
+            </span>
+            <p className="text-lg font- text-white mt-2" style={{ fontFamily: 'Times New Roman, serif' }}>
+              Style Meets Comfort
+            </p>
+            <div className="border-b-4 border-white w-1/2 mt-1"></div>
+          </Link>
           <div className="flex flex-col gap-1 -mt-1">
             <h1 className="font-titleFont text-xl font-medium">
               Get started for free
@@ -173,7 +183,7 @@ const SignUp = () => {
             <Link to="/signin">
               <button
                 className="w-full h-10 bg-primeColor rounded-md text-gray-200 text-base font-titleFont font-semibold 
-            tracking-wide hover:bg-black hover:text-white duration-300"
+                tracking-wide hover:bg-black hover:text-white duration-300"
               >
                 Sign in
               </button>
@@ -186,190 +196,151 @@ const SignUp = () => {
                 Create your account
               </h1>
               <div className="flex flex-col gap-3">
-                {/* client name */}
+                {/* Name */}
                 <div className="flex flex-col gap-.5">
-                  <p className="font-titleFont text-base font-semibold text-gray-600">
-                    Full Name
-                  </p>
+                  <p className="font-titleFont text-base font-semibold">Name</p>
                   <input
-                    onChange={handleName}
-                    value={clientName}
-                    className="w-full h-8 placeholder:text-sm placeholder:tracking-wide px-4 text-base font-medium placeholder:font-normal rounded-md border-[1px] border-gray-400 outline-none"
                     type="text"
-                    placeholder="eg. John Doe"
+                    onChange={handleName}
+                    value={Name}
+                    className="w-full h-10 rounded-md border-[1px] border-gray-300 px-2 text-base text-black outline-none
+                    focus:border-primeColor duration-300"
+                    placeholder="Enter your name"
                   />
-                  {errClientName && (
-                    <p className="text-sm text-red-500 font-titleFont font-semibold px-4">
-                      <span className="font-bold italic mr-1">!</span>
-                      {errClientName}
-                    </p>
-                  )}
+                  {errName && <p className="text-red-600">{errName}</p>}
                 </div>
+
                 {/* Email */}
                 <div className="flex flex-col gap-.5">
-                  <p className="font-titleFont text-base font-semibold text-gray-600">
-                    Work Email
-                  </p>
+                  <p className="font-titleFont text-base font-semibold">Email</p>
                   <input
+                    type="text"
                     onChange={handleEmail}
                     value={email}
-                    className="w-full h-8 placeholder:text-sm placeholder:tracking-wide px-4 text-base font-medium placeholder:font-normal rounded-md border-[1px] border-gray-400 outline-none"
-                    type="email"
-                    placeholder="john@workemail.com"
+                    className="w-full h-10 rounded-md border-[1px] border-gray-300 px-2 text-base text-black outline-none
+                    focus:border-primeColor duration-300"
+                    placeholder="Enter your email"
                   />
-                  {errEmail && (
-                    <p className="text-sm text-red-500 font-titleFont font-semibold px-4">
-                      <span className="font-bold italic mr-1">!</span>
-                      {errEmail}
-                    </p>
-                  )}
+                  {errEmail && <p className="text-red-600">{errEmail}</p>}
                 </div>
+
                 {/* Phone Number */}
                 <div className="flex flex-col gap-.5">
-                  <p className="font-titleFont text-base font-semibold text-gray-600">
-                    Phone Number
-                  </p>
+                  <p className="font-titleFont text-base font-semibold">Phone Number</p>
                   <input
+                    type="text"
                     onChange={handlePhone}
                     value={phone}
-                    className="w-full h-8 placeholder:text-sm placeholder:tracking-wide px-4 text-base font-medium placeholder:font-normal rounded-md border-[1px] border-gray-400 outline-none"
-                    type="text"
-                    placeholder="008801234567891"
+                    className="w-full h-10 rounded-md border-[1px] border-gray-300 px-2 text-base text-black outline-none
+                    focus:border-primeColor duration-300"
+                    placeholder="Enter your phone number"
                   />
-                  {errPhone && (
-                    <p className="text-sm text-red-500 font-titleFont font-semibold px-4">
-                      <span className="font-bold italic mr-1">!</span>
-                      {errPhone}
-                    </p>
-                  )}
+                  {errPhone && <p className="text-red-600">{errPhone}</p>}
                 </div>
+
                 {/* Password */}
                 <div className="flex flex-col gap-.5">
-                  <p className="font-titleFont text-base font-semibold text-gray-600">
-                    Password
-                  </p>
+                  <p className="font-titleFont text-base font-semibold">Password</p>
                   <input
+                    type="password"
                     onChange={handlePassword}
                     value={password}
-                    className="w-full h-8 placeholder:text-sm placeholder:tracking-wide px-4 text-base font-medium placeholder:font-normal rounded-md border-[1px] border-gray-400 outline-none"
-                    type="password"
-                    placeholder="Create password"
+                    className="w-full h-10 rounded-md border-[1px] border-gray-300 px-2 text-base text-black outline-none
+                    focus:border-primeColor duration-300"
+                    placeholder="Create a password"
                   />
-                  {errPassword && (
-                    <p className="text-sm text-red-500 font-titleFont font-semibold px-4">
-                      <span className="font-bold italic mr-1">!</span>
-                      {errPassword}
-                    </p>
-                  )}
+                  {errPassword && <p className="text-red-600">{errPassword}</p>}
                 </div>
+
                 {/* Address */}
                 <div className="flex flex-col gap-.5">
-                  <p className="font-titleFont text-base font-semibold text-gray-600">
-                    Address
-                  </p>
+                  <p className="font-titleFont text-base font-semibold">Address</p>
                   <input
+                    type="text"
                     onChange={handleAddress}
                     value={address}
-                    className="w-full h-8 placeholder:text-sm placeholder:tracking-wide px-4 text-base font-medium placeholder:font-normal rounded-md border-[1px] border-gray-400 outline-none"
-                    type="text"
-                    placeholder="road-001, house-115, example area"
+                    className="w-full h-10 rounded-md border-[1px] border-gray-300 px-2 text-base text-black outline-none
+                    focus:border-primeColor duration-300"
+                    placeholder="Enter your address"
                   />
-                  {errAddress && (
-                    <p className="text-sm text-red-500 font-titleFont font-semibold px-4">
-                      <span className="font-bold italic mr-1">!</span>
-                      {errAddress}
-                    </p>
-                  )}
+                  {errAddress && <p className="text-red-600">{errAddress}</p>}
                 </div>
+
                 {/* City */}
                 <div className="flex flex-col gap-.5">
-                  <p className="font-titleFont text-base font-semibold text-gray-600">
-                    City
-                  </p>
+                  <p className="font-titleFont text-base font-semibold">City</p>
                   <input
+                    type="text"
                     onChange={handleCity}
                     value={city}
-                    className="w-full h-8 placeholder:text-sm placeholder:tracking-wide px-4 text-base font-medium placeholder:font-normal rounded-md border-[1px] border-gray-400 outline-none"
-                    type="text"
-                    placeholder="Your city"
+                    className="w-full h-10 rounded-md border-[1px] border-gray-300 px-2 text-base text-black outline-none
+                    focus:border-primeColor duration-300"
+                    placeholder="Enter your city"
                   />
-                  {errCity && (
-                    <p className="text-sm text-red-500 font-titleFont font-semibold px-4">
-                      <span className="font-bold italic mr-1">!</span>
-                      {errCity}
-                    </p>
-                  )}
+                  {errCity && <p className="text-red-600">{errCity}</p>}
                 </div>
+
                 {/* Country */}
                 <div className="flex flex-col gap-.5">
-                  <p className="font-titleFont text-base font-semibold text-gray-600">
-                    Country
-                  </p>
+                  <p className="font-titleFont text-base font-semibold">Country</p>
                   <input
+                    type="text"
                     onChange={handleCountry}
                     value={country}
-                    className="w-full h-8 placeholder:text-sm placeholder:tracking-wide px-4 text-base font-medium placeholder:font-normal rounded-md border-[1px] border-gray-400 outline-none"
-                    type="text"
-                    placeholder="Your country"
+                    className="w-full h-10 rounded-md border-[1px] border-gray-300 px-2 text-base text-black outline-none
+                    focus:border-primeColor duration-300"
+                    placeholder="Enter your country"
                   />
-                  {errCountry && (
-                    <p className="text-sm text-red-500 font-titleFont font-semibold px-4">
-                      <span className="font-bold italic mr-1">!</span>
-                      {errCountry}
-                    </p>
-                  )}
+                  {errCountry && <p className="text-red-600">{errCountry}</p>}
                 </div>
-                {/* Zip code */}
+
+                {/* Zip */}
                 <div className="flex flex-col gap-.5">
-                  <p className="font-titleFont text-base font-semibold text-gray-600">
-                    Zip/Postal code
-                  </p>
+                  <p className="font-titleFont text-base font-semibold">Zip Code</p>
                   <input
+                    type="text"
                     onChange={handleZip}
                     value={zip}
-                    className="w-full h-8 placeholder:text-sm placeholder:tracking-wide px-4 text-base font-medium placeholder:font-normal rounded-md border-[1px] border-gray-400 outline-none"
-                    type="text"
-                    placeholder="Your country"
+                    className="w-full h-10 rounded-md border-[1px] border-gray-300 px-2 text-base text-black outline-none
+                    focus:border-primeColor duration-300"
+                    placeholder="Enter your zip code"
                   />
-                  {errZip && (
-                    <p className="text-sm text-red-500 font-titleFont font-semibold px-4">
-                      <span className="font-bold italic mr-1">!</span>
-                      {errZip}
-                    </p>
-                  )}
+                  {errZip && <p className="text-red-600">{errZip}</p>}
                 </div>
-                {/* Checkbox */}
-                <div className="flex items-start mdl:items-center gap-2">
+
+                {/* Terms and Conditions */}
+                <div className="flex items-center gap-2 mt-3">
                   <input
-                    onChange={() => setChecked(!checked)}
-                    className="w-4 h-4 mt-1 mdl:mt-0 cursor-pointer"
                     type="checkbox"
+                    checked={checked}
+                    onChange={() => setChecked(!checked)}
+                    className="h-4 w-4 accent-primeColor"
                   />
-                  <p className="text-sm text-primeColor">
-                    I agree to the Sttrika{" "}
-                    <span className="text-blue-500">Terms of Service </span>and{" "}
-                    <span className="text-blue-500">Privacy Policy</span>.
+                  <p className="text-base">
+                    I agree to the{" "}
+                    <span className="text-primeColor font-semibold cursor-pointer hover:underline">
+                      Terms and Conditions
+                    </span>
                   </p>
                 </div>
-                <button
-                  onClick={handleSignUp}
-                  className={`${
-                    checked
-                      ? "bg-primeColor hover:bg-black hover:text-white cursor-pointer"
-                      : "bg-gray-500 hover:bg-gray-500 hover:text-gray-200 cursor-none"
-                  } w-full text-gray-200 text-base font-medium h-10 rounded-md hover:text-white duration-300`}
-                >
-                  Create Account
-                </button>
-                <p className="text-sm text-center font-titleFont font-medium">
-                  Don't have an Account?{" "}
-                  <Link to="/signin">
-                    <span className="hover:text-blue-600 duration-300">
-                      Sign in
-                    </span>
-                  </Link>
-                </p>
               </div>
+
+              {/* Sign Up Button */}
+              <button
+                onClick={handleSignUp}
+                className="w-full h-10 mt-3 rounded-md bg-primeColor text-gray-200 text-base font-titleFont font-semibold
+                tracking-wide hover:bg-black hover:text-white duration-300"
+              >
+                Sign Up
+              </button>
+
+              {/* Existing User Link */}
+              <p className="text-base text-center mt-4">
+                Already have an account?{" "}
+                <Link to="/signin">
+                  <span className="text-primeColor font-semibold cursor-pointer hover:underline">Sign In</span>
+                </Link>
+              </p>
             </div>
           </form>
         )}
