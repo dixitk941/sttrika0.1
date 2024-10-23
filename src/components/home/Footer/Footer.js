@@ -4,6 +4,7 @@ import { FaFacebook, FaYoutube, FaLinkedin, FaGithub } from "react-icons/fa";
 import FooterListTitle from "./FooterListTitle";
 import { paymentCard } from "../../../assets/images";
 import Image from "../../designLayouts/Image";
+import './Footer.css'; // Assuming you have a CSS file for additional styles
 
 const Footer = () => {
   const [emailInfo, setEmailInfo] = useState("");
@@ -27,23 +28,25 @@ const Footer = () => {
       setEmailInfo("");
     }
   };
+
   return (
-    <div className="w-full bg-[#F5F5F3] py-20">
-      <div className="max-w-container mx-auto grid grid-cols-1 md:grid-cols-2  xl:grid-cols-6 px-4 gap-10">
+    <div className="w-full bg-gradient-to-r from-white to-gray-200 py-20">
+      <div className="max-w-container mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 px-4 gap-10">
         <div className="col-span-2">
-          <FooterListTitle title=" More about Sttrika Shop" />
+          <FooterListTitle title="More about Sttrika Shop" />
           <div className="flex flex-col gap-6">
             <p className="text-base w-full xl:w-[80%]">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Enim sint
-              ab ullam, numquam nesciunt in.
+              Style Meets Comfort. Sttrika brings you the perfect blend of elegance and ease. 
+              Our designs cater to the modern woman who values both fashion and functionality.
             </p>
             <ul className="flex items-center gap-2">
               <a
                 href="https://www.youtube.com/@Neocodenex"
                 target="_blank"
                 rel="noreferrer"
+                className="hover-link"
               >
-                <li className="w-7 h-7 bg-primeColor text-gray-100 hover:text-white cursor-pointer text-lg rounded-full flex justify-center items-center hover:bg-black duration-300">
+                <li className="w-7 h-7 bg-primeColor text-gray-100 cursor-pointer text-lg rounded-full flex justify-center items-center duration-300">
                   <FaYoutube />
                 </li>
               </a>
@@ -51,8 +54,9 @@ const Footer = () => {
                 href="https://github.com/dixitk941"
                 target="_blank"
                 rel="noreferrer"
+                className="hover-link"
               >
-                <li className="w-7 h-7 bg-primeColor text-gray-100 hover:text-white cursor-pointer text-lg rounded-full flex justify-center items-center hover:bg-black duration-300">
+                <li className="w-7 h-7 bg-primeColor text-gray-100 cursor-pointer text-lg rounded-full flex justify-center items-center duration-300">
                   <FaGithub />
                 </li>
               </a>
@@ -60,8 +64,9 @@ const Footer = () => {
                 href="https://www.instagram.com/karan_dixit19/"
                 target="_blank"
                 rel="noreferrer"
+                className="hover-link"
               >
-                <li className="w-7 h-7 bg-primeColor text-gray-100 hover:text-white cursor-pointer text-lg rounded-full flex justify-center items-center hover:bg-black duration-300">
+                <li className="w-7 h-7 bg-primeColor text-gray-100 cursor-pointer text-lg rounded-full flex justify-center items-center duration-300">
                   <FaFacebook />
                 </li>
               </a>
@@ -69,34 +74,15 @@ const Footer = () => {
                 href="https://www.linkedin.com/in/karan-dixit21/"
                 target="_blank"
                 rel="noreferrer"
+                className="hover-link"
               >
-                <li className="w-7 h-7 bg-primeColor text-gray-100 hover:text-white cursor-pointer text-lg rounded-full flex justify-center items-center hover:bg-black duration-300">
+                <li className="w-7 h-7 bg-primeColor text-gray-100 cursor-pointer text-lg rounded-full flex justify-center items-center duration-300">
                   <FaLinkedin />
                 </li>
               </a>
             </ul>
           </div>
         </div>
-        {/* <div>
-          <FooterListTitle title="Shop" />
-          <ul className="flex flex-col gap-2">
-            <li className="font-titleFont text-base text-lightText hover:text-black hover:underline decoration-[1px] decoration-gray-500 underline-offset-2 cursor-pointer duration-300">
-              Accesories
-            </li>
-            <li className="font-titleFont text-base text-lightText hover:text-black hover:underline decoration-[1px] decoration-gray-500 underline-offset-2 cursor-pointer duration-300">
-              Clothes
-            </li>
-            <li className="font-titleFont text-base text-lightText hover:text-black hover:underline decoration-[1px] decoration-gray-500 underline-offset-2 cursor-pointer duration-300">
-              Electronics
-            </li>
-            <li className="font-titleFont text-base text-lightText hover:text-black hover:underline decoration-[1px] decoration-gray-500 underline-offset-2 cursor-pointer duration-300">
-              Home appliances
-            </li>
-            <li className="font-titleFont text-base text-lightText hover:text-black hover:underline decoration-[1px] decoration-gray-500 underline-offset-2 cursor-pointer duration-300">
-              New Arrivals
-            </li>
-          </ul>
-        </div> */}
         <div>
           <FooterListTitle title="Your account" />
           <ul className="flex flex-col gap-2">
@@ -121,7 +107,7 @@ const Footer = () => {
           <FooterListTitle title="Subscribe to our newsletter." />
           <div className="w-full">
             <p className="text-center mb-4">
-              A at pellentesque et mattis porta enim elementum.
+            Stay updated with the latest trends and offers.
             </p>
             {subscription ? (
               <motion.p
@@ -130,7 +116,7 @@ const Footer = () => {
                 transition={{ duration: 0.5 }}
                 className="w-full text-center text-base font-titleFont font-semibold text-green-600"
               >
-                Subscribed Successfully !
+                Subscribed Successfully!
               </motion.p>
             ) : (
               <div className="w-full flex-col xl:flex-row flex justify-between items-center gap-4">
@@ -156,7 +142,6 @@ const Footer = () => {
                 </button>
               </div>
             )}
-
             <Image
               className={`w-[80%] lg:w-[60%] mx-auto ${
                 subscription ? "mt-2" : "mt-6"

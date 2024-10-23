@@ -70,9 +70,16 @@ const Header = () => {
                   className="w-[80%] h-full relative"
                 >
                   <div className="w-full h-full bg-primeColor p-6">
-                  <span class="text-3xl font-semibold text-gray-800 tracking-wide">
-  Sttrika
-</span>
+                  <Link to="/" className="flex flex-col items-center text-center">
+                        <span className="text-3xl font-bold tracking-wide text-white" style={{ fontFamily: 'Times New Roman, serif' }}>
+                          Sttrika
+                        </span>
+                        <p className="text-lg font- text-white mt-2" style={{ fontFamily: 'Times New Roman, serif' }}>
+                          Style Meets Comfort
+                        </p>
+                        <div className="border-b-4 border-white w-1/2 mt-1"></div>
+                      </Link>
+                      <br /><br />
                     <ul className="text-gray-200 flex flex-col gap-2">
                       {navBarList.map((item) => (
                         <li

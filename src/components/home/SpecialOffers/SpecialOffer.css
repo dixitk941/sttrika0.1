@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap');
+
+body {
+  font-family: 'Montserrat', sans-serif;
+}
+
+.product-card {
+  @apply bg-gradient-to-r from-white to-gray-200 text-black rounded-lg shadow-lg hover:shadow-xl transition-transform duration-300;
+}
+
+.product-card:hover {
+  @apply transform -translate-y-2;
+}
+
+.product-card img {
+  @apply rounded-t-lg;
+}
+
+.product-card .product-info {
+  @apply p-4;
+}
+
+.product-card .product-info h3 {
+  @apply text-xl font-bold mb-2;
+}
+
+.product-card .product-info p {
+  @apply text-base text-gray-700;
+}
+
+.product-card .product-info .price {
+  @apply text-2xl font-bold text-black;
+}
+
+.product-card .product-info .badge {
+  @apply bg-pink-500 text-white px-2 py-1 rounded text-sm font-medium;
+}
