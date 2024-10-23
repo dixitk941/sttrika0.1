@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -30,26 +30,20 @@ const storage = getStorage(app);
 const Cart = () => {
   const dispatch = useDispatch();
   const products = useSelector((state) => state.orebiReducer.products);
-  const [totalAmt, setTotalAmt] = useState("");
-  const [shippingCharge, setShippingCharge] = useState("");
+  const [totalAmt, setTotalAmt] = useState(0);
+  const [shippingCharge, setShippingCharge] = useState(0);
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   useEffect(() => {
     onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-      } else {
-        setUser(null);
-      }
+      setUser(currentUser || null);
     });
   }, []);
 
   useEffect(() => {
-    let price = 0;
-    products.forEach((item) => {
-      price += item.price * item.quantity;
-    });
+    const price = products.reduce((acc, item) => acc + item.price * item.quantity, 0);
     setTotalAmt(price);
   }, [products]);
 
@@ -58,7 +52,7 @@ const Cart = () => {
       setShippingCharge(30);
     } else if (totalAmt <= 400) {
       setShippingCharge(25);
-    } else if (totalAmt > 401) {
+    } else {
       setShippingCharge(20);
     }
   }, [totalAmt]);
@@ -73,18 +67,21 @@ const Cart = () => {
     return url;
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = useCallback(async () => {
     if (user) {
       try {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
           const productDetails = await Promise.all(
             products.map(async (product) => {
-              const imageUrl = await uploadImage(product.image);
-              return {
-                ...product,
-                imageUrl,
-              };
+              if (product.image) {
+                const imageUrl = await uploadImage(product.image);
+                return {
+                  ...product,
+                  imageUrl,
+                };
+              }
+              return product; // Return product as-is if no image
             })
           );
 
@@ -97,22 +94,32 @@ const Cart = () => {
             createdAt: new Date(),
           });
 
+          // Navigate to the payment gateway
           navigate("/paymentgateway");
         } else {
-          console.log("User data does not exist in Firestore");
+          console.error("User data does not exist in Firestore");
         }
       } catch (error) {
         console.error("Error processing checkout: ", error);
       }
     } else {
-      console.log("User not authenticated");
-      navigate("/login");
+      setShowLoginPrompt(true); // Show login prompt if user is not authenticated
     }
-  };
+  }, [user, products, totalAmt, shippingCharge, navigate]);
 
   return (
     <div className="w-full max-w-container mx-auto px-4">
       <Breadcrumbs title="Cart" />
+      {showLoginPrompt && (
+        <div className="p-4 mb-4 bg-yellow-200 border border-yellow-400 text-yellow-700 rounded">
+          <p>Please log in to proceed to checkout.</p>
+          <Link to="/signin">
+            <button className="bg-primeColor text-white px-4 py-2 mt-2 rounded">
+              Login
+            </button>
+          </Link>
+        </div>
+      )}
       {products.length > 0 ? (
         <div className="pb-20">
           <div className="w-full h-20 bg-[#F5F7F7] text-primeColor hidden lgl:grid grid-cols-5 place-content-center px-6 text-lg font-titleFont font-semibold">
@@ -143,9 +150,7 @@ const Cart = () => {
                 type="text"
                 placeholder="Coupon Number"
               />
-              <p className="text-sm mdl:text-base font-semibold">
-                Apply Coupon
-              </p>
+              <p className="text-sm mdl:text-base font-semibold">Apply Coupon</p>
             </div>
             <p className="text-lg font-semibold">Update Cart</p>
           </div>
@@ -184,34 +189,13 @@ const Cart = () => {
           </div>
         </div>
       ) : (
-        <motion.div
-          initial={{ y: 30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.4 }}
-          className="flex flex-col mdl:flex-row justify-center items-center gap-4 pb-20"
-        >
-          <div>
-            <img
-              className="w-80 rounded-lg p-4 mx-auto"
-              src={emptyCart}
-              alt="emptyCart"
-            />
-          </div>
-          <div className="max-w-[500px] p-4 py-8 bg-white flex gap-4 flex-col items-center rounded-md shadow-lg">
-            <h1 className="font-titleFont text-xl font-bold uppercase">
-              Your Cart feels lonely.
-            </h1>
-            <p className="text-sm text-center px-10 -mt-2">
-              Your Shopping cart lives to serve. Give it purpose - fill it with
-              books, electronics, videos, etc. and make it happy.
-            </p>
-            <Link to="/shop">
-              <button className="bg-primeColor rounded-md cursor-pointer hover:bg-black active:bg-gray-900 px-8 py-2 font-titleFont font-semibold text-lg text-gray-200 hover:text-white duration-300">
-                Continue Shopping
-              </button>
-            </Link>
-          </div>
-        </motion.div>
+        <div className="flex flex-col items-center justify-center mt-10">
+          <img src={emptyCart} alt="Empty Cart" className="w-72" />
+          <h1 className="text-3xl font-semibold text-primeColor">Your Cart is Empty</h1>
+          <Link to="/">
+            <button className="bg-primeColor text-white py-2 px-4 rounded">Continue Shopping</button>
+          </Link>
+        </div>
       )}
     </div>
   );
