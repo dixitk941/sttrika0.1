@@ -14,7 +14,7 @@ const firebaseConfig = {
     projectId: "sttrika-official",
     storageBucket: "sttrika-official.appspot.com",
     messagingSenderId: "276195318783",
-    appId: "1:276195318783:web:3dd5735fd9145b752fa5ca"
+    appId: "1:276195318783:web:3dd5735fd9145b752fa5ca",
 };
 
 // Initialize Firebase
@@ -38,53 +38,52 @@ const Profile = () => {
     const [orderHistory, setOrderHistory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-
+    
     useEffect(() => {
-        const fetchProfileAndOrders = async (user) => {
-            try {
-                // Fetch user profile
-                const docRef = doc(db, 'users', user.uid);
-                const docSnap = await getDoc(docRef);
-                
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    setName(data.Name || '');
-                    setAge(data.age || '');
-                    setEmail(user.email);
-                    setAddress(data.address || '');
-                    setCity(data.city || '');
-                    setCountry(data.country || '');
-                    setPhone(data.phone || '');
-                    setZip(data.zip || '');
-                    setProfilePhotoURL(data.profilePhotoURL || '');
-                }
-
-                // Fetch order history
-                const ordersRef = collection(db, 'orders');
-                const orderHistoryQuery = query(ordersRef, where('userId', '==', user.uid));
-                const ordersSnap = await getDocs(orderHistoryQuery);
-                const orders = ordersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                setOrderHistory(orders);
-
-                setLoading(false);
-            } catch (err) {
-                console.error("Error fetching profile and orders: ", err);
-                setError("Failed to fetch profile and orders.");
-                setLoading(false);
-            }
-        };
-
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (user) {
-                fetchProfileAndOrders(user);
+                fetchProfileAndOrders(user); // Fetch user profile data here
             } else {
-                setLoading(false);
+                setLoading(false); // Stop loading if user is not logged in
             }
         });
-
-        // Cleanup subscription on unmount
+    
         return () => unsubscribe();
     }, []);
+
+    const fetchProfileAndOrders = async (user) => {
+        try {
+            // Fetch user profile
+            const docRef = doc(db, 'users', user.uid);
+            const docSnap = await getDoc(docRef);
+            
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                setName(data.Name || '');
+                setAge(data.age || '');
+                setEmail(user.email);
+                setAddress(data.address || '');
+                setCity(data.city || '');
+                setCountry(data.country || '');
+                setPhone(data.phone || '');
+                setZip(data.zip || '');
+                setProfilePhotoURL(data.profilePhotoURL || '');
+            }
+
+            // Fetch order history
+            const ordersRef = collection(db, 'orders');
+            const orderHistoryQuery = query(ordersRef, where('userId', '==', user.uid));
+            const ordersSnap = await getDocs(orderHistoryQuery);
+            const orders = ordersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setOrderHistory(orders);
+
+            setLoading(false);
+        } catch (err) {
+            console.error("Error fetching profile and orders: ", err);
+            setError("Failed to fetch profile and orders.");
+            setLoading(false);
+        }
+    };
 
     const handleEditToggle = () => {
         setIsEditing(!isEditing);
@@ -136,8 +135,64 @@ const Profile = () => {
                     {/* Editable Profile Fields */}
                     {isEditing ? (
                         <div className="mt-5 grid grid-cols-1 gap-4">
-                            {/* Editable Fields */}
-                            {/* Add your input fields here as needed */}
+                            {/* Add input fields for editing profile here */}
+                            <input 
+                                type="text" 
+                                placeholder="Name" 
+                                value={name} 
+                                onChange={(e) => setName(e.target.value)} 
+                                className="border border-gray-300 p-2 rounded"
+                            />
+                            <input 
+                                type="text" 
+                                placeholder="Age" 
+                                value={age} 
+                                onChange={(e) => setAge(e.target.value)} 
+                                className="border border-gray-300 p-2 rounded"
+                            />
+                            <input 
+                                type="text" 
+                                placeholder="Email" 
+                                value={email} 
+                                onChange={(e) => setEmail(e.target.value)} 
+                                className="border border-gray-300 p-2 rounded"
+                                disabled
+                            />
+                            <input 
+                                type="text" 
+                                placeholder="Address" 
+                                value={address} 
+                                onChange={(e) => setAddress(e.target.value)} 
+                                className="border border-gray-300 p-2 rounded"
+                            />
+                            <input 
+                                type="text" 
+                                placeholder="City" 
+                                value={city} 
+                                onChange={(e) => setCity(e.target.value)} 
+                                className="border border-gray-300 p-2 rounded"
+                            />
+                            <input 
+                                type="text" 
+                                placeholder="Country" 
+                                value={country} 
+                                onChange={(e) => setCountry(e.target.value)} 
+                                className="border border-gray-300 p-2 rounded"
+                            />
+                            <input 
+                                type="text" 
+                                placeholder="Phone" 
+                                value={phone} 
+                                onChange={(e) => setPhone(e.target.value)} 
+                                className="border border-gray-300 p-2 rounded"
+                            />
+                            <input 
+                                type="text" 
+                                placeholder="Zip Code" 
+                                value={zip} 
+                                onChange={(e) => setZip(e.target.value)} 
+                                className="border border-gray-300 p-2 rounded"
+                            />
                         </div>
                     ) : (
                         <div className="mt-5">
@@ -171,17 +226,7 @@ const Profile = () => {
                             {orderHistory.map(order => (
                                 <li key={order.id} className="mb-4 p-4 border-b border-gray-300">
                                     <h2 className="font-semibold">Order ID: {order.id}</h2>
-                                    <p><strong>Total Amount:</strong> ₹{order.totalAmount + order.shippingCharge}</p>
-                                    <p><strong>Shipping Charge:</strong> ₹{order.shippingCharge}</p>
-                                    <p><strong>Created At:</strong> {new Date(order.createdAt.seconds * 1000).toLocaleString()}</p>
-                                    <p><strong>Products:</strong></p>
-                                    <ul className="ml-4">
-                                        {order.products.map(product => (
-                                            <li key={product.id} className="ml-4">
-                                                {product.name} - ₹{product.price} x {product.quantity}
-                                            </li>
-                                        ))}
-                                    </ul>
+                                    {/* Display order details here, such as items, prices, dates, etc. */}
                                 </li>
                             ))}
                         </ul>
