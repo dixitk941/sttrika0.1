@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaUser, FaShoppingBag, FaCamera, FaCheck, FaTimes } from 'react-icons/fa';
-import Header from '../home/Header/Header';
-import Footer from '../home/Footer/Footer';
-import HeaderBottom from '../home/Header/HeaderBottom';
-import FooterBottom from '../home/Footer/FooterBottom';
+import { FaShoppingBag, FaCamera, FaCheck, FaTimes } from 'react-icons/fa';
 import Breadcrumbs from '../pageProps/Breadcrumbs';
 import { 
     auth, 
@@ -182,16 +178,12 @@ const Profile = () => {
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50">
-                <Header />
-                <HeaderBottom />
                 <div className="flex items-center justify-center h-96">
                     <div className="text-center">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primeColor mx-auto mb-4"></div>
                         <p className="text-lightText font-bodyFont">Loading your profile...</p>
                     </div>
                 </div>
-                <Footer />
-                <FooterBottom />
             </div>
         );
     }
@@ -199,18 +191,12 @@ const Profile = () => {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <Header />
-            <HeaderBottom />
             <div className="max-w-container mx-auto px-4 py-8 pb-20 md:pb-8">
                 {/* Breadcrumbs */}
                 <Breadcrumbs title="My Profile" />
                 
                 {/* Page Header */}
                 <div className="mb-8">
-                    <div className="flex items-center gap-3 mb-2">
-                        <FaUser className="text-primeColor text-2xl" />
-                        <h1 className="text-3xl font-titleFont font-bold text-primeColor">My Profile</h1>
-                    </div>
                     <p className="text-lightText">Manage your account information and view your order history</p>
                     
                     {/* Error Message */}
@@ -526,8 +512,6 @@ const Profile = () => {
                     </div>
                 </div>
             </div>
-            <Footer />
-            <FooterBottom />
         </div>
     );
 };
