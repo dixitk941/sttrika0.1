@@ -1,31 +1,19 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import Breadcrumbs from "../../components/pageProps/Breadcrumbs";
 import { resetCart } from "../../redux/orebiSlice";
 import { emptyCart } from "../../assets/images/index";
 import ItemCard from "./ItemCard";
-import { getFirestore, collection, addDoc, doc, getDoc } from "firebase/firestore";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { initializeApp } from "firebase/app";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-
-// Your Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyAAjDM52pKftwpRjAuWmyybk0fJDYblWYk",
-  authDomain: "sttrika-official.firebaseapp.com",
-  projectId: "sttrika-official",
-  storageBucket: "sttrika-official.appspot.com",
-  messagingSenderId: "276195318783",
-  appId: "1:276195318783:web:3dd5735fd9145b752fa5ca",
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-const storage = getStorage(app);
+import { 
+  auth, 
+  db, 
+  onAuthStateChanged, 
+  collection, 
+  addDoc, 
+  doc, 
+  getDoc 
+} from "../../config/firebase";
 
 const Cart = () => {
   const dispatch = useDispatch();
@@ -57,55 +45,177 @@ const Cart = () => {
     }
   }, [totalAmt]);
 
-  const uploadImage = async (image) => {
-    if (!image) {
-      throw new Error("No image provided");
-    }
-    const storageRef = ref(storage, `images/${image.name}`);
-    await uploadBytes(storageRef, image);
-    const url = await getDownloadURL(storageRef);
-    return url;
+  const generateOrderId = () => {
+    const timestamp = Date.now().toString();
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `ORD-${timestamp}-${random}`;
+  };
+
+  const calculateItemTotal = (item) => {
+    return item.price * item.quantity;
+  };
+
+  const calculateTax = (subtotal) => {
+    // Calculate GST (18% in India)
+    return Math.round(subtotal * 0.18);
+  };
+
+  const calculateDiscount = (subtotal) => {
+    // Apply discount based on subtotal
+    if (subtotal >= 1000) return Math.round(subtotal * 0.1); // 10% discount for orders above ₹1000
+    if (subtotal >= 500) return Math.round(subtotal * 0.05); // 5% discount for orders above ₹500
+    return 0;
   };
 
   const handleCheckout = useCallback(async () => {
     if (user) {
       try {
         const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          const productDetails = await Promise.all(
-            products.map(async (product) => {
-              if (product.image) {
-                const imageUrl = await uploadImage(product.image);
-                return {
-                  ...product,
-                  imageUrl,
-                };
-              }
-              return product; // Return product as-is if no image
-            })
-          );
+        const userData = userDoc.exists() ? userDoc.data() : {};
+        
+        const orderId = generateOrderId();
+        const subtotal = totalAmt;
+        const discount = calculateDiscount(subtotal);
+        const discountedSubtotal = subtotal - discount;
+        const tax = calculateTax(discountedSubtotal);
+        const finalTotal = discountedSubtotal + tax + shippingCharge;
 
-          await addDoc(collection(db, "orders"), {
-            userId: user.uid,
-            products: productDetails,
-            totalAmount: totalAmt,
+        // Prepare detailed items array
+        const orderItems = products.map((product) => ({
+          productId: product._id || product.id,
+          name: product.name,
+          image: product.image,
+          price: product.price,
+          quantity: product.quantity,
+          colors: product.colors || product.color,
+          badge: product.badge,
+          itemTotal: calculateItemTotal(product),
+          // Additional product details
+          category: product.category || 'General',
+          brand: product.brand || 'Sttrika',
+          size: product.size || 'One Size',
+          sku: product.sku || `SKU-${product._id}`,
+        }));
+
+        // Create comprehensive order object
+        const orderData = {
+          // Order Identification
+          orderId: orderId,
+          orderNumber: orderId,
+          
+          // User Information
+          userId: user.uid,
+          userEmail: user.email,
+          customerInfo: {
+            name: userData.Name || user.displayName || 'Customer',
+            email: user.email,
+            phone: userData.phone || '',
+            address: {
+              street: userData.address || '',
+              city: userData.city || '',
+              country: userData.country || 'India',
+              zipCode: userData.zip || '',
+            }
+          },
+
+          // Order Items
+          items: orderItems,
+          itemCount: products.length,
+          totalQuantity: products.reduce((sum, item) => sum + item.quantity, 0),
+
+          // Price Breakdown
+          pricing: {
+            subtotal: subtotal,
+            discount: discount,
+            discountPercentage: discount > 0 ? Math.round((discount / subtotal) * 100) : 0,
+            discountedSubtotal: discountedSubtotal,
+            tax: tax,
+            taxRate: 18, // GST rate in percentage
             shippingCharge: shippingCharge,
-            total: totalAmt + shippingCharge,
-            createdAt: new Date(),
-          });
+            total: finalTotal,
+          },
 
-          // Navigate to the payment gateway
-          navigate("/paymentgateway");
-        } else {
-          console.error("User data does not exist in Firestore");
-        }
+          // Order Status & Tracking
+          status: 'pending',
+          paymentStatus: 'pending',
+          orderStage: 'placed',
+          trackingStages: {
+            placed: {
+              status: 'completed',
+              timestamp: new Date(),
+              message: 'Order has been placed successfully'
+            },
+            confirmed: {
+              status: 'pending',
+              timestamp: null,
+              message: 'Order confirmation pending'
+            },
+            shipped: {
+              status: 'pending',
+              timestamp: null,
+              message: 'Order will be shipped soon'
+            },
+            delivered: {
+              status: 'pending',
+              timestamp: null,
+              message: 'Order will be delivered'
+            }
+          },
+
+          // Timestamps
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+
+          // Additional Metadata
+          metadata: {
+            source: 'web',
+            browser: navigator.userAgent,
+            timestamp: Date.now(),
+            currency: 'INR',
+            locale: 'en-IN',
+          },
+
+          // Order Notes
+          notes: {
+            customer: '',
+            internal: `Order placed via web cart with ${products.length} items`,
+          }
+        };
+
+        // Save order to Firestore
+        const orderRef = await addDoc(collection(db, "orders"), orderData);
+        
+        // Update order with Firestore document ID
+        await addDoc(collection(db, "orders", orderRef.id, "history"), {
+          action: 'order_created',
+          timestamp: new Date(),
+          details: 'Order successfully created and saved to database',
+          orderId: orderId,
+        });
+
+        console.log("Order created successfully:", orderId);
+        
+        // Clear cart after successful order
+        dispatch(resetCart());
+        
+        // Navigate to payment with order details
+        navigate("/paymentgateway", {
+          state: {
+            orderId: orderId,
+            orderData: orderData,
+            total: finalTotal
+          }
+        });
+
       } catch (error) {
         console.error("Error processing checkout: ", error);
+        alert("Failed to place order. Please try again.");
       }
     } else {
-      setShowLoginPrompt(true); // Show login prompt if user is not authenticated
+      setShowLoginPrompt(true);
     }
-  }, [user, products, totalAmt, shippingCharge, navigate]);
+  }, [user, products, totalAmt, shippingCharge, navigate, dispatch]);
 
   return (
     <div className="w-full max-w-container mx-auto px-4">
@@ -164,23 +274,66 @@ const Cart = () => {
                     ₹{totalAmt}
                   </span>
                 </p>
+                
+                {/* Show discount if applicable */}
+                {calculateDiscount(totalAmt) > 0 && (
+                  <p className="flex items-center justify-between border-[1px] border-gray-400 border-b-0 py-1.5 text-lg px-4 font-medium text-green-600">
+                    Discount ({Math.round((calculateDiscount(totalAmt) / totalAmt) * 100)}% off)
+                    <span className="font-semibold tracking-wide font-titleFont">
+                      -₹{calculateDiscount(totalAmt)}
+                    </span>
+                  </p>
+                )}
+                
+                <p className="flex items-center justify-between border-[1px] border-gray-400 border-b-0 py-1.5 text-lg px-4 font-medium">
+                  After Discount
+                  <span className="font-semibold tracking-wide font-titleFont">
+                    ₹{totalAmt - calculateDiscount(totalAmt)}
+                  </span>
+                </p>
+                
+                <p className="flex items-center justify-between border-[1px] border-gray-400 border-b-0 py-1.5 text-lg px-4 font-medium">
+                  Tax (GST 18%)
+                  <span className="font-semibold tracking-wide font-titleFont">
+                    ₹{calculateTax(totalAmt - calculateDiscount(totalAmt))}
+                  </span>
+                </p>
+                
                 <p className="flex items-center justify-between border-[1px] border-gray-400 border-b-0 py-1.5 text-lg px-4 font-medium">
                   Shipping Charge
                   <span className="font-semibold tracking-wide font-titleFont">
                     ₹{shippingCharge}
                   </span>
                 </p>
-                <p className="flex items-center justify-between border-[1px] border-gray-400 py-1.5 text-lg px-4 font-medium">
-                  Total
-                  <span className="font-bold tracking-wide text-lg font-titleFont">
-                    ₹{totalAmt + shippingCharge}
+                
+                <p className="flex items-center justify-between border-[1px] border-gray-400 py-1.5 text-lg px-4 font-medium bg-gray-50">
+                  Final Total
+                  <span className="font-bold tracking-wide text-xl font-titleFont text-primeColor">
+                    ₹{totalAmt - calculateDiscount(totalAmt) + calculateTax(totalAmt - calculateDiscount(totalAmt)) + shippingCharge}
                   </span>
                 </p>
               </div>
+              
+              {/* Savings Display */}
+              {calculateDiscount(totalAmt) > 0 && (
+                <div className="bg-green-50 border border-green-200 p-3 rounded">
+                  <p className="text-green-700 text-sm font-medium text-center">
+                    🎉 You're saving ₹{calculateDiscount(totalAmt)} on this order!
+                  </p>
+                </div>
+              )}
+              
+              {/* Items Summary */}
+              <div className="bg-gray-50 p-3 rounded">
+                <p className="text-sm text-lightText text-center">
+                  {products.length} item(s) • {products.reduce((sum, item) => sum + item.quantity, 0)} piece(s)
+                </p>
+              </div>
+              
               <div className="flex justify-end">
                 <button
                   onClick={handleCheckout}
-                  className="w-52 h-10 bg-primeColor text-white hover:bg-black duration-300"
+                  className="w-52 h-10 bg-primeColor text-white hover:bg-black duration-300 font-titleFont font-semibold"
                 >
                   Proceed to Checkout
                 </button>

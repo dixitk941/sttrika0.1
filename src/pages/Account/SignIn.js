@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { BsCheckCircleFill } from "react-icons/bs";
 import { Link, useNavigate } from "react-router-dom";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "./firebaseConfig";  // Import Firebase Auth
+import { auth, signInWithEmailAndPassword } from "../../config/firebase";
 import { logoLight } from "../../assets/images";
 
 const SignIn = () => {

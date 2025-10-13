@@ -1,140 +1,678 @@
-import React, { useEffect, useState } from "react";
-import { Link, NavLink, useLocation } from "react-router-dom";
-import { MdClose } from "react-icons/md";
-import { HiMenuAlt2 } from "react-icons/hi";
-import { AiOutlineHome, AiOutlineShoppingCart, AiOutlineUser } from "react-icons/ai";
-import { FaStore } from "react-icons/fa";
+import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { logoLight } from "../../../assets/images";
+import { HiOutlineMenuAlt4 } from "react-icons/hi";
+import { FaTimes, FaSearch, FaUser, FaCaretDown, FaShoppingCart, FaSignOutAlt, FaSignInAlt, FaUserPlus } from "react-icons/fa";
+import { AiOutlineHome } from "react-icons/ai";
+import { FaStore } from "react-icons/fa";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { logoLight } from "../../../assets/images/index";
 import Image from "../../designLayouts/Image";
-import { navBarList } from "../../../constants";
-import Flex from "../../designLayouts/Flex";
-
-const BottomNavBar = () => (
-  <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex justify-around py-2 z-50 md:hidden">
-    <NavLink to="/" className="flex flex-col items-center text-gray-600 hover:text-black">
-      <AiOutlineHome size={24} />
-      <span className="text-xs">Home</span>
-    </NavLink>
-    <NavLink to="/shop" className="flex flex-col items-center text-gray-600 hover:text-black">
-      <FaStore size={24} />
-      <span className="text-xs">Shop</span>
-    </NavLink>
-    <NavLink to="/cart" className="flex flex-col items-center text-gray-600 hover:text-black">
-      <AiOutlineShoppingCart size={24} />
-      <span className="text-xs">Cart</span>
-    </NavLink>
-    <NavLink to="/profile" className="flex flex-col items-center text-gray-600 hover:text-black">
-      <AiOutlineUser size={24} />
-      <span className="text-xs">Profile</span>
-    </NavLink>
-  </div>
-);
+import { navBarList, paginationItems } from "../../../constants";
+import { auth, onAuthStateChanged, signOut } from "../../../config/firebase";
 
 const Header = () => {
-  const [showMenu, setShowMenu] = useState(true);
-  const [sidenav, setSidenav] = useState(false);
-  const [category, setCategory] = useState(false);
-  const [brand, setBrand] = useState(false);
-  const location = useLocation();
+  const products = useSelector((state) => state.orebiReducer.products);
+  const [showMenu, setShowMenu] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [showUser, setShowUser] = useState(false);
+  const [user, setUser] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const navigate = useNavigate();
+  const ref = useRef();
+  const userRef = useRef();
 
   useEffect(() => {
-    const ResponsiveMenu = () => {
-      if (window.innerWidth < 667) {
+    const handleOutsideClick = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
         setShowMenu(false);
-      } else {
-        setShowMenu(true);
+      }
+      if (userRef.current && !userRef.current.contains(e.target)) {
+        setShowUser(false);
       }
     };
-    ResponsiveMenu();
-    window.addEventListener("resize", ResponsiveMenu);
-    return () => window.removeEventListener("resize", ResponsiveMenu);
+    
+    const handleKeyPress = (e) => {
+      if (e.key === 'Escape') {
+        setShowMobileSearch(false);
+        setSearchQuery("");
+        setShowSearchResults(false);
+      }
+    };
+    
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("keydown", handleKeyPress);
+    
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [ref, userRef]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const isScrolled = window.scrollY > 10;
+      setScrolled(isScrolled);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // Prevent body scroll when mobile search is active
+  useEffect(() => {
+    if (showMobileSearch) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showMobileSearch]);
+
+  // Listen for authentication state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleSearch = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    setShowSearchResults(query.length > 0);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setShowUser(false);
+      navigate("/");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
+  const handleSearchItemClick = (item) => {
+    navigate(
+      `/product/${item.productName.toLowerCase().split("").join("")}`,
+      { state: { item: item } }
+    );
+    setSearchQuery("");
+    setShowSearchResults(false);
+  };
+
+  useEffect(() => {
+    if (searchQuery) {
+      const filtered = paginationItems.filter((item) =>
+        item.productName.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredProducts(filtered);
+    } else {
+      setFilteredProducts([]);
+    }
+  }, [searchQuery]);
+
+  const getNavIcon = (title) => {
+    switch (title) {
+      case "Home":
+        return <AiOutlineHome className="w-5 h-5" />;
+      case "Shop":
+        return <FaStore className="w-4 h-4" />;
+      default:
+        return null;
+    }
+  };
 
   return (
     <>
-      <div className="w-full h-20 bg-white sticky top-0 z-50 border-b-[1px] border-b-gray-200">
-        <nav className="h-full px-4 max-w-container mx-auto relative">
-          <Flex className="flex items-center justify-between h-full">
-            <Link to="/">
-              <Image className="w-64 object-cover" imgSrc={logoLight} />
-            </Link>
-            <div>
-              {showMenu && (
-                <motion.ul
-                  initial={{ y: 30, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ duration: 0.5 }}
-                  className="flex items-center w-auto z-50 p-0 gap-2"
-                >
-                  {navBarList.map(({ _id, title, link }) => (
-                    <NavLink
-                      key={_id}
-                      className="flex font-normal hover:font-bold w-20 h-6 justify-center items-center px-12 text-base text-[#767676] hover:underline underline-offset-[4px] decoration-[1px] hover:text-[#262626] md:border-r-[2px] border-r-gray-300 hoverEffect last:border-r-0"
-                      to={link}
-                      state={{ data: location.pathname.split("/")[1] }}
-                    >
-                      <li>{title}</li>
-                    </NavLink>
-                  ))}
-                </motion.ul>
-              )}
-              <HiMenuAlt2
-                onClick={() => setSidenav(!sidenav)}
-                className="inline-block md:hidden cursor-pointer w-8 h-6 absolute top-6 right-4"
-              />
-              {sidenav && (
-                <div className="fixed top-0 left-0 w-full h-screen bg-black text-gray-200 bg-opacity-80 z-50">
-                  <motion.div
-                    initial={{ x: -300, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ duration: 0.5 }}
-                    className="w-[80%] h-full relative"
+      {/* Main Header */}
+      <header 
+        className={`w-full sticky top-0 z-50 transition-all duration-300 ${
+          scrolled 
+            ? 'bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200/50' 
+            : 'bg-white border-b border-gray-200'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Mobile Search Bar - Full Width when Active */}
+          {showMobileSearch && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="lg:hidden absolute inset-x-4 top-1/2 transform -translate-y-1/2 z-10"
+            >
+                <div className="relative flex items-center bg-white border-2 border-[#262626] rounded-lg overflow-hidden shadow-lg">
+                  <input
+                    className="flex-1 h-12 px-4 outline-none text-[#262626] placeholder:text-[#6D6D6D] bg-white"
+                    type="text"
+                    onChange={handleSearch}
+                    value={searchQuery}
+                    placeholder="Search for products..."
+                    onFocus={() => setShowSearchResults(searchQuery.length > 0)}
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => {
+                      setShowMobileSearch(false);
+                      setSearchQuery("");
+                      setShowSearchResults(false);
+                    }}
+                    className="px-4 text-[#6D6D6D] hover:text-[#262626] transition-colors duration-300"
                   >
-                    <div className="w-full h-full bg-primeColor p-6">
-                      <Link to="/" className="flex flex-col items-center text-center">
-                        <span className="text-3xl font-bold tracking-wide text-white" style={{ fontFamily: 'Times New Roman, serif' }}>
-                          Sttrika
-                        </span>
-                        <p className="text-lg font- text-white mt-2" style={{ fontFamily: 'Times New Roman, serif' }}>
-                          Style Meets Comfort
-                        </p>
-                        <div className="border-b-4 border-white w-1/2 mt-1"></div>
-                      </Link>
-                      <br /><br />
-                      <ul className="text-gray-200 flex flex-col gap-2">
-                        {navBarList.map((item) => (
-                          <li
-                            className="font-normal hover:font-bold items-center text-lg text-gray-200 hover:underline underline-offset-[4px] decoration-[1px] hover:text-white md:border-r-[2px] border-r-gray-300 hoverEffect last:border-r-0"
+                    <FaTimes className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                {/* Mobile Search Results Dropdown */}
+                {searchQuery && showSearchResults && (
+                  <div className="absolute w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-80 overflow-y-auto">
+                    {filteredProducts.length > 0 ? (
+                      <>
+                        <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+                          <p className="text-sm text-[#6D6D6D]">
+                            {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found
+                          </p>
+                        </div>
+                        {filteredProducts.slice(0, 6).map((item) => (
+                          <div
                             key={item._id}
+                            onClick={() => {
+                              handleSearchItemClick(item);
+                              setShowMobileSearch(false);
+                            }}
+                            className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-200"
                           >
-                            <NavLink
-                              to={item.link}
-                              state={{ data: location.pathname.split("/")[1] }}
-                              onClick={() => setSidenav(false)}
-                            >
-                              {item.title}
-                            </NavLink>
-                          </li>
+                            <img 
+                              className="w-12 h-12 object-cover rounded border border-gray-200" 
+                              src={item.img} 
+                              alt={item.productName}
+                              onError={(e) => {
+                                e.target.src = 'https://via.placeholder.com/48x48?text=No+Image';
+                              }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-medium text-[#262626] truncate text-sm">
+                                {item.productName}
+                              </h3>
+                              <p className="text-xs text-[#6D6D6D] truncate">
+                                ₹{item.price}
+                              </p>
+                            </div>
+                          </div>
                         ))}
-                      </ul>
-                      {/* Category and Brand dropdowns */}
+                        {filteredProducts.length > 6 && (
+                          <div className="px-4 py-2 bg-gray-50 text-center">
+                            <p className="text-xs text-[#6D6D6D]">
+                              +{filteredProducts.length - 6} more results
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="px-4 py-6 text-center">
+                        <p className="text-[#6D6D6D] text-sm">No products found</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* Mobile Layout: Logo and Search */}
+            <div className="lg:hidden flex items-center justify-between w-full h-16 px-2">
+              
+              {/* Logo */}
+              <Link to="/" className={`flex-shrink-0 transition-opacity duration-200 ${showMobileSearch ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <Image 
+                    className="h-8 w-auto object-contain" 
+                    imgSrc={logoLight} 
+                  />
+                </motion.div>
+              </Link>
+              
+              {/* Search Button with Label (Windows 11 style) */}
+              <div className={`transition-opacity duration-200 ${showMobileSearch ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                <button
+                  onClick={() => setShowMobileSearch(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors duration-200 border border-gray-300"
+                  aria-label="Search"
+                >
+                  <FaSearch className="w-4 h-4 text-[#6D6D6D]" />
+                  <span className="text-sm text-[#6D6D6D] font-medium">Search</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Desktop Layout */}
+            <div className="hidden lg:flex items-center justify-between w-full gap-8">
+              {/* Desktop Logo */}
+              <Link to="/" className="flex-shrink-0">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="relative"
+                >
+                  <Image 
+                    className="h-14 w-auto object-contain" 
+                    imgSrc={logoLight} 
+                  />
+                </motion.div>
+              </Link>
+
+              {/* Desktop Navigation */}
+              <nav className="flex items-center space-x-1">
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="flex items-center space-x-1"
+              >
+                {navBarList.map(({ _id, title, link }) => (
+                  <NavLink
+                    key={_id}
+                    to={link}
+                    className={({ isActive }) =>
+                      `relative px-4 py-2 text-sm font-medium transition-all duration-200 rounded-lg group ${
+                        isActive
+                          ? 'text-[#262626] bg-gray-50'
+                          : 'text-[#6D6D6D] hover:text-[#262626] hover:bg-gray-50'
+                      }`
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <span className="relative z-10">{title}</span>
+                        {isActive && (
+                          <motion.div
+                            layoutId="activeTab"
+                            className="absolute inset-0 bg-gray-100 rounded-lg"
+                            initial={false}
+                            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                          />
+                        )}
+                        <div className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-0.5 bg-[#262626] transition-all duration-200 ${
+                          isActive ? 'w-6' : 'group-hover:w-4'
+                        }`} />
+                      </>
+                    )}
+                  </NavLink>
+                ))}
+              </motion.div>
+            </nav>
+
+            {/* Search Bar - Desktop */}
+            <div className="relative hidden lg:block flex-1 max-w-2xl mx-8">
+              <div className="relative flex items-center bg-gray-50 border border-gray-300 rounded-lg overflow-hidden hover:border-[#262626] focus-within:border-[#262626] transition-colors duration-300">
+                <input
+                  className="flex-1 h-10 px-4 outline-none text-[#262626] placeholder:text-[#6D6D6D] bg-transparent"
+                  type="text"
+                  onChange={handleSearch}
+                  value={searchQuery}
+                  placeholder="Search for products, brands, categories..."
+                  onFocus={() => setShowSearchResults(searchQuery.length > 0)}
+                />
+                <div className="px-4 text-[#6D6D6D] hover:text-[#262626] cursor-pointer transition-colors duration-300">
+                  <FaSearch className="w-4 h-4" />
+                </div>
+              </div>
+              
+              {/* Search Results Dropdown */}
+              {searchQuery && showSearchResults && (
+                <div className="absolute w-full mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto">
+                  {filteredProducts.length > 0 ? (
+                    <>
+                      <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+                        <p className="text-sm text-[#6D6D6D]">
+                          {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found
+                        </p>
+                      </div>
+                      {filteredProducts.slice(0, 8).map((item) => (
+                        <div
+                          key={item._id}
+                          onClick={() => handleSearchItemClick(item)}
+                          className="flex items-center gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-200"
+                        >
+                          <img 
+                            className="w-16 h-16 object-cover rounded border border-gray-200" 
+                            src={item.img} 
+                            alt={item.productName}
+                            onError={(e) => {
+                              e.target.src = 'https://via.placeholder.com/64x64?text=No+Image';
+                            }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-titleFont font-medium text-[#262626] truncate">
+                              {item.productName}
+                            </h3>
+                            <p className="text-sm text-[#6D6D6D] truncate">
+                              {item.des}
+                            </p>
+                            <p className="text-sm font-semibold text-[#262626] mt-1">
+                              ₹{item.price}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                      {filteredProducts.length > 8 && (
+                        <div className="px-4 py-3 bg-gray-50 text-center">
+                          <p className="text-sm text-[#6D6D6D]">
+                            +{filteredProducts.length - 8} more results. Keep typing to refine your search.
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="px-4 py-8 text-center">
+                      <p className="text-[#6D6D6D]">No products found for "{searchQuery}"</p>
+                      <p className="text-sm text-[#6D6D6D] mt-1">Try different keywords or browse our categories</p>
                     </div>
-                    <span
-                      onClick={() => setSidenav(false)}
-                      className="w-8 h-8 border-[1px] border-gray-300 absolute top-2 -right-10 text-gray-300 text-2xl flex justify-center items-center cursor-pointer hover:border-red-500 hover:text-red-500 duration-300"
-                    >
-                      <MdClose />
-                    </span>
-                  </motion.div>
+                  )}
                 </div>
               )}
             </div>
-          </Flex>
-        </nav>
+
+            {/* Mobile Search Icon - Only visible on mobile when search is not active */}
+            <div className={`lg:hidden transition-opacity duration-200 ${showMobileSearch ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+              <button
+                onClick={() => setShowMobileSearch(true)}
+                className="p-2 rounded-lg text-[#6D6D6D] hover:text-[#262626] hover:bg-gray-50 transition-colors duration-200"
+                aria-label="Search"
+              >
+                <FaSearch className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* User Profile & Cart Section - Hidden on mobile, visible on desktop */}
+            <div className={`hidden lg:flex items-center gap-4 transition-opacity duration-200 ${showMobileSearch ? 'lg:opacity-100 opacity-0 pointer-events-none lg:pointer-events-auto' : 'opacity-100'}`}>
+              
+              {/* Dynamic User Profile Dropdown */}
+              <div className="relative" ref={userRef}>
+                <div 
+                  onClick={() => setShowUser(!showUser)} 
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors duration-300 group"
+                >
+                  <div className="w-8 h-8 bg-[#262626] text-white rounded-full flex items-center justify-center group-hover:bg-black transition-colors duration-300">
+                    <FaUser className="w-4 h-4" />
+                  </div>
+                  <div className="hidden xl:flex flex-col">
+                    <span className="text-xs text-[#6D6D6D]">
+                      {user ? 'Welcome back' : 'Hello, Guest'}
+                    </span>
+                    <span className="text-sm font-medium text-[#262626]">
+                      {user ? (user.displayName || user.email?.split('@')[0] || 'User') : 'Sign In'}
+                    </span>
+                  </div>
+                  <FaCaretDown className="text-[#6D6D6D] group-hover:text-[#262626] transition-colors duration-300" />
+                </div>
+                
+                {showUser && (
+                  <motion.div
+                    initial={{ y: 10, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute top-full right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl z-50 min-w-48 py-2"
+                  >
+                    {user ? (
+                      // Logged in user menu
+                      <>
+                        <div className="px-4 py-3 border-b border-gray-100">
+                          <p className="font-medium text-[#262626] truncate">
+                            {user.displayName || user.email?.split('@')[0] || 'User'}
+                          </p>
+                          <p className="text-xs text-[#6D6D6D] truncate">
+                            {user.email}
+                          </p>
+                        </div>
+                        
+                        <Link to="/profile" onClick={() => setShowUser(false)}>
+                          <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors duration-200">
+                            <FaUser className="w-4 h-4 text-[#6D6D6D]" />
+                            <span className="text-[#262626]">My Profile</span>
+                          </div>
+                        </Link>
+                        
+                        <Link to="/profile" onClick={() => setShowUser(false)}>
+                          <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors duration-200">
+                            <FaShoppingCart className="w-4 h-4 text-[#6D6D6D]" />
+                            <span className="text-[#262626]">My Orders</span>
+                          </div>
+                        </Link>
+                        
+                        <hr className="my-2" />
+                        
+                        <button 
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors duration-200 text-left"
+                        >
+                          <FaSignOutAlt className="w-4 h-4 text-red-500" />
+                          <span className="text-red-600">Sign Out</span>
+                        </button>
+                      </>
+                    ) : (
+                      // Guest user menu
+                      <>
+                        <Link to="/signin" onClick={() => setShowUser(false)}>
+                          <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors duration-200">
+                            <FaSignInAlt className="w-4 h-4 text-[#6D6D6D]" />
+                            <span className="text-[#262626]">Sign In</span>
+                          </div>
+                        </Link>
+                        
+                        <Link to="/signup" onClick={() => setShowUser(false)}>
+                          <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors duration-200">
+                            <FaUserPlus className="w-4 h-4 text-[#6D6D6D]" />
+                            <span className="text-[#262626]">Create Account</span>
+                          </div>
+                        </Link>
+                      </>
+                    )}
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Shopping Cart */}
+              <Link to="/cart">
+                <div className="relative flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors duration-300 group">
+                  <div className="relative">
+                    <FaShoppingCart className="w-6 h-6 text-[#262626] group-hover:text-black transition-colors duration-300" />
+                    {products.length > 0 && (
+                      <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                        {products.length > 99 ? '99+' : products.length}
+                      </span>
+                    )}
+                  </div>
+                  <div className="hidden xl:flex flex-col">
+                    <span className="text-xs text-[#6D6D6D]">Your Cart</span>
+                    <span className="text-sm font-medium text-[#262626]">
+                      {products.length} item{products.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            </div>
+
+            {/* Mobile Menu Button - Hidden on mobile since bottom nav exists */}
+            <div className="hidden" ref={ref}>
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                className="p-2 rounded-lg text-[#6D6D6D] hover:text-[#262626] hover:bg-gray-50 transition-colors duration-200"
+                aria-label="Toggle menu"
+              >
+                {showMenu ? (
+                  <FaTimes className="w-5 h-5" />
+                ) : (
+                  <HiOutlineMenuAlt4 className="w-6 h-6" />
+                )}
+              </button>
+
+              {/* Mobile Menu */}
+              {showMenu && (
+                <>
+                  {/* Backdrop */}
+                  <div 
+                    className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+                    onClick={() => setShowMenu(false)}
+                  />
+                  
+                  {/* Menu Panel */}
+                  <motion.div
+                    initial={{ opacity: 0, x: 300 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 300 }}
+                    transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                    className="fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 overflow-hidden"
+                  >
+                    <div className="flex flex-col h-full">
+                      {/* Menu Header */}
+                      <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                        <div className="flex items-center space-x-3">
+                          <Image className="h-8 w-auto" imgSrc={logoLight} />
+                          <span className="text-lg font-semibold text-[#262626]">Menu</span>
+                        </div>
+                        <button
+                          onClick={() => setShowMenu(false)}
+                          className="p-2 rounded-lg text-[#6D6D6D] hover:text-[#262626] hover:bg-gray-50 transition-colors duration-200"
+                        >
+                          <FaTimes className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      {/* Mobile Search */}
+                      <div className="p-6 border-b border-gray-200">
+                        <div className="relative flex items-center bg-gray-50 border border-gray-300 rounded-lg overflow-hidden hover:border-[#262626] focus-within:border-[#262626] transition-colors duration-300">
+                          <input
+                            className="flex-1 h-10 px-4 outline-none text-[#262626] placeholder:text-[#6D6D6D] bg-transparent"
+                            type="text"
+                            onChange={handleSearch}
+                            value={searchQuery}
+                            placeholder="Search products..."
+                            onFocus={() => setShowSearchResults(searchQuery.length > 0)}
+                          />
+                          <div className="px-4 text-[#6D6D6D] hover:text-[#262626] cursor-pointer transition-colors duration-300">
+                            <FaSearch className="w-4 h-4" />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Menu Items */}
+                      <nav className="flex-1 py-6">
+                        <motion.ul
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: 0.1 }}
+                          className="space-y-2 px-6"
+                        >
+                          {navBarList.map(({ _id, title, link }, index) => (
+                            <motion.li
+                              key={_id}
+                              initial={{ opacity: 0, x: 20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ duration: 0.3, delay: index * 0.1 }}
+                            >
+                              <NavLink
+                                to={link}
+                                onClick={() => setShowMenu(false)}
+                                className={({ isActive }) =>
+                                  `flex items-center space-x-3 px-4 py-3 rounded-xl text-base font-medium transition-all duration-200 ${
+                                    isActive
+                                      ? 'text-[#262626] bg-gray-100'
+                                      : 'text-[#6D6D6D] hover:text-[#262626] hover:bg-gray-50'
+                                  }`
+                                }
+                              >
+                                {getNavIcon(title)}
+                                <span>{title}</span>
+                              </NavLink>
+                            </motion.li>
+                          ))}
+                        </motion.ul>
+                      </nav>
+
+                      {/* Menu Footer */}
+                      <div className="p-6 border-t border-gray-200">
+                        <div className="text-center">
+                          <p className="text-sm text-[#6D6D6D]">
+                            Discover amazing products
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile Bottom Navigation */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+        <div className="grid grid-cols-4 gap-1 py-2">
+          {navBarList.map(({ _id, title, link }) => (
+            <NavLink
+              key={_id}
+              to={link}
+              className={({ isActive }) =>
+                `flex flex-col items-center justify-center py-2 px-1 text-xs transition-colors duration-200 ${
+                  isActive
+                    ? 'text-[#262626]'
+                    : 'text-[#6D6D6D] hover:text-[#262626]'
+                }`
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <div className={`mb-1 transition-all duration-200 ${
+                    isActive ? 'text-[#262626]' : 'text-[#6D6D6D]'
+                  }`}>
+                    {getNavIcon(title)}
+                  </div>
+                  <span className="font-medium">{title}</span>
+                  <div className={`w-6 h-0.5 rounded-full mt-1 transition-all duration-200 ${
+                    isActive ? 'bg-[#262626]' : 'bg-transparent'
+                  }`} />
+                </>
+              )}
+            </NavLink>
+          ))}
+          
+          {/* Cart Bottom Nav Item */}
+          <Link to="/cart" className="flex flex-col items-center justify-center py-2 px-1 text-xs transition-colors duration-200 text-[#6D6D6D] hover:text-[#262626]">
+            <div className="relative mb-1">
+              <FaShoppingCart className="w-5 h-5" />
+              {products.length > 0 && (
+                <span className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                  {products.length > 9 ? '9+' : products.length}
+                </span>
+              )}
+            </div>
+            <span className="font-medium">Cart</span>
+          </Link>
+          
+          {/* Profile Bottom Nav Item */}
+          <Link to="/profile" className="flex flex-col items-center justify-center py-2 px-1 text-xs transition-colors duration-200 text-[#6D6D6D] hover:text-[#262626]">
+            <FaUser className="w-5 h-5 mb-1" />
+            <span className="font-medium">Profile</span>
+          </Link>
+        </div>
       </div>
-      {/* Only show BottomNavBar on mobile view */}
-      <BottomNavBar />
+
+      {/* Mobile Bottom Spacer */}
+      <div className="lg:hidden h-16" />
     </>
   );
 };

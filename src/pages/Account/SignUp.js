@@ -2,10 +2,7 @@ import React, { useState } from "react";
 import { BsCheckCircleFill } from "react-icons/bs";
 import { Link } from "react-router-dom";
 import { logoLight } from "../../assets/images";
-import { auth } from "./firebaseConfig"; // Import auth from firebase.js
-import { createUserWithEmailAndPassword } from "firebase/auth"; // Firebase method for signup
-import { db } from "./firebaseConfig"; // Import Firestore database
-import { doc, setDoc } from "firebase/firestore"; // Firestore methods
+import { auth, db, createUserWithEmailAndPassword, doc, setDoc } from "../../config/firebase";
 
 const SignUp = () => {
   // States (as before)
