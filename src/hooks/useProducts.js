@@ -22,7 +22,8 @@ export const useProducts = () => {
           ...doc.data(),
           // Convert Firestore data to match existing format
           productName: doc.data().name,
-          color: doc.data().colors?.[0] || "Black",
+          img: doc.data().image, // Map image field to img for compatibility
+          color: doc.data().colors?.join(", ") || "Available in multiple colors",
           des: doc.data().description || "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
           badge: doc.data().badge === "New" || doc.data().badge === "Sale" || doc.data().badge === "Hot" || doc.data().badge === "Best Seller"
         }));
@@ -65,7 +66,8 @@ export const useProductsByCategory = (category) => {
           _id: doc.data()._id || doc.id,
           ...doc.data(),
           productName: doc.data().name,
-          color: doc.data().colors?.[0] || "Black",
+          img: doc.data().image, // Map image field to img for compatibility
+          color: doc.data().colors?.join(", ") || "Available in multiple colors",
           des: doc.data().description || "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
           badge: doc.data().badge === "New" || doc.data().badge === "Sale" || doc.data().badge === "Hot" || doc.data().badge === "Best Seller"
         }));
@@ -110,7 +112,8 @@ export const useFeaturedProducts = (limit = 8) => {
           _id: doc.data()._id || doc.id,
           ...doc.data(),
           productName: doc.data().name,
-          color: doc.data().colors?.[0] || "Black",
+          img: doc.data().image, // Map image field to img for compatibility
+          color: doc.data().colors?.join(", ") || "Available in multiple colors",
           des: doc.data().description || "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
           badge: doc.data().badge === "New" || doc.data().badge === "Sale" || doc.data().badge === "Hot" || doc.data().badge === "Best Seller"
         }));
@@ -124,7 +127,8 @@ export const useFeaturedProducts = (limit = 8) => {
             _id: doc.data()._id || doc.id,
             ...doc.data(),
             productName: doc.data().name,
-            color: doc.data().colors?.[0] || "Black",
+            img: doc.data().image, // Map image field to img for compatibility
+            color: doc.data().colors?.join(", ") || "Available in multiple colors",
             des: doc.data().description || "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
             badge: doc.data().badge === "New" || doc.data().badge === "Sale" || doc.data().badge === "Hot" || doc.data().badge === "Best Seller"
           }));
@@ -170,7 +174,8 @@ export const useProductsByBadge = (badge, limit = 4) => {
           _id: doc.data()._id || doc.id,
           ...doc.data(),
           productName: doc.data().name,
-          color: doc.data().colors?.[0] || "Black",
+          img: doc.data().image, // Map image field to img for compatibility
+          color: doc.data().colors?.join(", ") || "Available in multiple colors",
           des: doc.data().description || "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
           badge: true
         }));
@@ -184,7 +189,8 @@ export const useProductsByBadge = (badge, limit = 4) => {
             _id: doc.data()._id || doc.id,
             ...doc.data(),
             productName: doc.data().name,
-            color: doc.data().colors?.[0] || "Black",
+            img: doc.data().image, // Map image field to img for compatibility
+            color: doc.data().colors?.join(", ") || "Available in multiple colors",
             des: doc.data().description || "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
             badge: true
           }));
@@ -204,4 +210,65 @@ export const useProductsByBadge = (badge, limit = 4) => {
   }, [badge, limit]);
 
   return { products, loading, error };
+};
+
+// Hook to fetch available categories (only categories that have products)
+export const useAvailableCategories = () => {
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchAvailableCategories = async () => {
+      try {
+        setLoading(true);
+        const productsRef = collection(db, "products");
+        const querySnapshot = await getDocs(productsRef);
+        
+        // Extract unique categories and count products
+        const categoryMap = new Map();
+        let totalProducts = 0;
+        
+        querySnapshot.docs.forEach(doc => {
+          const category = doc.data().category;
+          if (category && category.trim() !== "") {
+            const currentCount = categoryMap.get(category) || 0;
+            categoryMap.set(category, currentCount + 1);
+            totalProducts++;
+          }
+        });
+
+        // Convert to array and sort alphabetically
+        const availableCategories = Array.from(categoryMap.keys()).sort();
+        
+        // Create category objects with proper format and product count
+        const categoryObjects = [
+          {
+            _id: 1,
+            title: "All Products",
+            value: "all",
+            count: totalProducts,
+          },
+          ...availableCategories.map((category, index) => ({
+            _id: index + 2,
+            title: category,
+            value: category,
+            count: categoryMap.get(category),
+          }))
+        ];
+        
+        setCategories(categoryObjects);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching available categories:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAvailableCategories();
+  }, []);
+
+  return { categories, loading, error };
 };

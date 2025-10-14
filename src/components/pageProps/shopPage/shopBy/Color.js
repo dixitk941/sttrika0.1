@@ -7,28 +7,63 @@ const Color = () => {
   const colors = [
     {
       _id: 9001,
-      title: "Green",
-      base: "#22c55e",
+      title: "Black",
+      base: "#000000",
     },
     {
       _id: 9002,
-      title: "Gray",
-      base: "#a3a3a3",
+      title: "White",
+      base: "#FFFFFF",
     },
     {
       _id: 9003,
       title: "Red",
-      base: "#dc2626",
+      base: "#EF4444",
     },
     {
       _id: 9004,
-      title: "Yellow",
-      base: "#f59e0b",
+      title: "Blue",
+      base: "#3B82F6",
     },
     {
       _id: 9005,
-      title: "Blue",
-      base: "#3b82f6",
+      title: "Green",
+      base: "#10B981",
+    },
+    {
+      _id: 9006,
+      title: "Pink",
+      base: "#EC4899",
+    },
+    {
+      _id: 9007,
+      title: "Purple",
+      base: "#8B5CF6",
+    },
+    {
+      _id: 9008,
+      title: "Yellow",
+      base: "#F59E0B",
+    },
+    {
+      _id: 9009,
+      title: "Orange",
+      base: "#F97316",
+    },
+    {
+      _id: 9010,
+      title: "Brown",
+      base: "#92400E",
+    },
+    {
+      _id: 9011,
+      title: "Gray",
+      base: "#6B7280",
+    },
+    {
+      _id: 9012,
+      title: "Navy",
+      base: "#1E3A8A",
     },
   ];
 
@@ -53,8 +88,11 @@ const Color = () => {
                 className="border-b-[1px] border-b-[#F0F0F0] pb-2 flex items-center gap-2"
               >
                 <span
-                  style={{ background: item.base }}
-                  className={`w-3 h-3 bg-gray-500 rounded-full`}
+                  style={{ 
+                    background: item.base,
+                    border: item.title === 'White' ? '1px solid #D1D5DB' : 'none'
+                  }}
+                  className={`w-3 h-3 rounded-full`}
                 ></span>
                 {item.title}
               </li>
