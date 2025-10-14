@@ -1,15 +1,25 @@
-import React from "react";
+import React, { useEffect, useCallback } from "react";
 import NavTitle from "./NavTitle";
 import { useAvailableCategories } from "../../../../hooks/useProducts";
 
 const Category = ({ onCategorySelect, selectedCategory }) => {
   // Fetch only categories that have products
   const { categories, loading, error } = useAvailableCategories();
-  const handleCategoryClick = (categoryValue) => {
+  const handleCategoryClick = useCallback((categoryValue) => {
     if (onCategorySelect) {
       onCategorySelect(categoryValue);
     }
-  };
+  }, [onCategorySelect]);
+
+  // Check if the currently selected category still exists in available categories
+  const isSelectedCategoryAvailable = categories.some(cat => cat.value === selectedCategory);
+  
+  // If selected category is no longer available (products deleted), auto-select "All Products"
+  useEffect(() => {
+    if (!loading && !isSelectedCategoryAvailable && selectedCategory !== "all" && categories.length > 0) {
+      handleCategoryClick("all");
+    }
+  }, [loading, isSelectedCategoryAvailable, selectedCategory, categories.length, handleCategoryClick]);
 
   if (loading) {
     return (
@@ -43,7 +53,7 @@ const Category = ({ onCategorySelect, selectedCategory }) => {
           </div>
         ) : (
           <ul className="flex flex-col gap-4 text-sm lg:text-base text-[#767676]">
-            {categories.map(({ _id, title, value }) => (
+            {categories.map(({ _id, title, value, count }) => (
               <li
                 key={_id}
                 onClick={() => handleCategoryClick(value)}
@@ -51,7 +61,14 @@ const Category = ({ onCategorySelect, selectedCategory }) => {
                   selectedCategory === value ? 'text-primeColor font-semibold' : ''
                 }`}
               >
-                {title}
+                <span>{title}</span>
+                <span className={`text-xs px-2 py-1 rounded-full ${
+                  selectedCategory === value 
+                    ? 'bg-primeColor text-white' 
+                    : 'bg-gray-100 text-gray-600'
+                }`}>
+                  {count}
+                </span>
               </li>
             ))}
           </ul>

@@ -213,62 +213,62 @@ export const useProductsByBadge = (badge, limit = 4) => {
 };
 
 // Hook to fetch available categories (only categories that have products)
-export const useAvailableCategories = () => {
+export const useAvailableCategories = (refreshTrigger) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const fetchAvailableCategories = async () => {
+    try {
+      setLoading(true);
+      const productsRef = collection(db, "products");
+      const querySnapshot = await getDocs(productsRef);
+      
+      // Extract unique categories and count products
+      const categoryMap = new Map();
+      let totalProducts = 0;
+      
+      querySnapshot.docs.forEach(doc => {
+        const category = doc.data().category;
+        if (category && category.trim() !== "") {
+          const currentCount = categoryMap.get(category) || 0;
+          categoryMap.set(category, currentCount + 1);
+          totalProducts++;
+        }
+      });
+
+      // Convert to array and sort alphabetically
+      const availableCategories = Array.from(categoryMap.keys()).sort();
+      
+      // Create category objects with proper format and product count
+      const categoryObjects = [
+        {
+          _id: 1,
+          title: "All Products",
+          value: "all",
+          count: totalProducts,
+        },
+        ...availableCategories.map((category, index) => ({
+          _id: index + 2,
+          title: category,
+          value: category,
+          count: categoryMap.get(category),
+        }))
+      ];
+      
+      setCategories(categoryObjects);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching available categories:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchAvailableCategories = async () => {
-      try {
-        setLoading(true);
-        const productsRef = collection(db, "products");
-        const querySnapshot = await getDocs(productsRef);
-        
-        // Extract unique categories and count products
-        const categoryMap = new Map();
-        let totalProducts = 0;
-        
-        querySnapshot.docs.forEach(doc => {
-          const category = doc.data().category;
-          if (category && category.trim() !== "") {
-            const currentCount = categoryMap.get(category) || 0;
-            categoryMap.set(category, currentCount + 1);
-            totalProducts++;
-          }
-        });
-
-        // Convert to array and sort alphabetically
-        const availableCategories = Array.from(categoryMap.keys()).sort();
-        
-        // Create category objects with proper format and product count
-        const categoryObjects = [
-          {
-            _id: 1,
-            title: "All Products",
-            value: "all",
-            count: totalProducts,
-          },
-          ...availableCategories.map((category, index) => ({
-            _id: index + 2,
-            title: category,
-            value: category,
-            count: categoryMap.get(category),
-          }))
-        ];
-        
-        setCategories(categoryObjects);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching available categories:", err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchAvailableCategories();
-  }, []);
+  }, [refreshTrigger]);
 
-  return { categories, loading, error };
+  return { categories, loading, error, refetch: fetchAvailableCategories };
 };
