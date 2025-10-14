@@ -2,16 +2,13 @@ import React from "react";
 import Slider from "react-slick";
 import Heading from "../Products/Heading";
 import Product from "../Products/Product";
-import {
-  newArrOne,
-  newArrTwo,
-  newArrThree,
-  newArrFour,
-} from "../../../assets/images/index";
+import { useProductsByBadge } from "../../../hooks/useProducts";
 import SampleNextArrow from "./SampleNextArrow";
 import SamplePrevArrow from "./SamplePrevArrow";
 
 const NewArrivals = () => {
+  const { products, loading, error } = useProductsByBadge("New", 8);
+
   const settings = {
     infinite: true,
     speed: 500,
@@ -46,65 +43,46 @@ const NewArrivals = () => {
       },
     ],
   };
+
+  if (loading) {
+    return (
+      <div className="w-full pb-16">
+        <Heading heading="New Arrivals" />
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primeColor"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full pb-16">
+        <Heading heading="New Arrivals" />
+        <div className="flex justify-center items-center h-64">
+          <p className="text-red-500">Error loading new arrivals</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full pb-16">
       <Heading heading="New Arrivals" />
       <Slider {...settings}>
-        <div className="px-2">
-          <Product
-            _id="100001"
-            img={newArrFour}
-            productName="Women Tiered Yellow, Light Green Dress"
-            price="444.00"
-            color="Black"
-            badge={true}
-            des="Lorem ipsum dolor sit amet consectetur adipisicing elit. Hic excepturi quibusdam odio deleniti reprehenderit facilis."
-          />
-        </div>
-        <div className="px-2">
-          <Product
-            _id="100002"
-            img={newArrThree}
-            productName="Women Gown Pink Dress"
-            price="250.00"
-            color="Black"
-            badge={true}
-            des="Lorem ipsum dolor sit amet consectetur adipisicing elit. Hic excepturi quibusdam odio deleniti reprehenderit facilis."
-          />
-        </div>
-        <div className="px-2">
-          <Product
-            _id="100003"
-            img={newArrOne}
-            productName="Women A-line Dark Blue, Light Blue Dress"
-            price="480.00"
-            color="Mixed"
-            badge={true}
-            des="Lorem ipsum dolor sit amet consectetur adipisicing elit. Hic excepturi quibusdam odio deleniti reprehenderit facilis."
-          />
-        </div>
-        <div className="px-2">
-          <Product
-            _id="100004"
-            img={newArrTwo}
-            productName="Women A-line Dark Blue, Light Blue Dress"
-            price="460.00"
-            color="Mixed"
-            badge={false}
-            des="Lorem ipsum dolor sit amet consectetur adipisicing elit. Hic excepturi quibusdam odio deleniti reprehenderit facilis."
-          />
-        </div>
-        <div className="px-2">
-          <Product
-            _id="100005"
-            img={newArrTwo}
-            productName="Women A-line Dark Blue, Light Blue Dress"
-            price="60.00"
-            color="Mixed"
-            badge={false}
-            des="Lorem ipsum dolor sit amet consectetur adipisicing elit. Hic excepturi quibusdam odio deleniti reprehenderit facilis."
-          />
-        </div>
+        {products.map((product) => (
+          <div key={product._id} className="px-2">
+            <Product
+              _id={product._id}
+              img={product.image}
+              productName={product.productName || product.name}
+              price={product.price}
+              color={product.color}
+              badge={product.badge}
+              des={product.des || product.description}
+            />
+          </div>
+        ))}
       </Slider>
     </div>
   );

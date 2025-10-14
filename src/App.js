@@ -18,7 +18,8 @@ import Offer from "./pages/Offer/Offer";
 import Payment from "./pages/payment/Payment";
 import ProductDetails from "./pages/ProductDetails/ProductDetails";
 import Shop from "./pages/Shop/Shop";
-import Profile from "./components/Profile/Profile"
+import Profile from "./components/Profile/Profile";
+import AdminDashboard from "./pages/Admin/AdminDashboard";
 
 const Layout = () => {
   return (
@@ -48,6 +49,7 @@ const router = createBrowserRouter(
       </Route>
       <Route path="/signup" element={<SignUp />}></Route>
       <Route path="/signin" element={<SignIn />}></Route>
+      <Route path="/admin" element={<AdminDashboard />}></Route>
     </Route>
   )
 );

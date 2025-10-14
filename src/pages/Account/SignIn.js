@@ -48,7 +48,12 @@ const SignIn = () => {
           setEmail("");
           setPassword("");
           setTimeout(() => {
-            navigate("/");  // Navigate to dashboard or other page after sign in
+            // Check if user is admin
+            if (userCredential.user.email === 'strrikaadmin#@gmail.com') {
+              navigate("/admin");  // Navigate to admin dashboard
+            } else {
+              navigate("/");  // Navigate to home page for regular users
+            }
           }, 1500);
         })
         .catch((error) => {

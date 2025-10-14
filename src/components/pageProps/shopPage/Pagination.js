@@ -1,9 +1,7 @@
 import React, { useState } from "react";
 import ReactPaginate from "react-paginate";
 import Product from "../../home/Products/Product";
-import { paginationItems } from "../../../constants";
-
-const items = paginationItems;
+import { useProducts } from "../../../hooks/useProducts";
 function Items({ currentItems }) {
   return (
     <>
@@ -26,6 +24,9 @@ function Items({ currentItems }) {
 }
 
 const Pagination = ({ itemsPerPage }) => {
+  // Fetch products from Firestore
+  const { products: items, loading, error } = useProducts();
+  
   // Here we use item offsets; we could also use page offsets
   // following the API or data you're working with.
   const [itemOffset, setItemOffset] = useState(0);
@@ -38,6 +39,22 @@ const Pagination = ({ itemsPerPage }) => {
   //   console.log(`Loading items from ${itemOffset} to ${endOffset}`);
   const currentItems = items.slice(itemOffset, endOffset);
   const pageCount = Math.ceil(items.length / itemsPerPage);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primeColor"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <p className="text-red-500">Error loading products: {error}</p>
+      </div>
+    );
+  }
 
   // Invoke when user click to request another page.
   const handlePageClick = (event) => {

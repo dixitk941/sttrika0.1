@@ -12,7 +12,8 @@ import {
   collection, 
   addDoc, 
   doc, 
-  getDoc 
+  getDoc,
+  setDoc 
 } from "../../config/firebase";
 
 const Cart = () => {
@@ -68,17 +69,52 @@ const Cart = () => {
   };
 
   const handleCheckout = useCallback(async () => {
-    if (user) {
+    if (!user) {
+      setShowLoginPrompt(true);
+      return;
+    }
+
+    // Check if user is properly authenticated
+    if (!user.uid || !user.email) {
+      console.error("User authentication incomplete:", user);
+      alert("Authentication error. Please log out and log back in.");
+      return;
+    }
+
+    try {
+      console.log("Starting checkout process for user:", user.uid);
+      
+      // Try to fetch user document, create if it doesn't exist
+      let userData = {};
       try {
         const userDoc = await getDoc(doc(db, "users", user.uid));
-        const userData = userDoc.exists() ? userDoc.data() : {};
+        if (userDoc.exists()) {
+          userData = userDoc.data();
+        } else {
+          // Create basic user document if it doesn't exist
+          userData = {
+            Name: user.displayName || "Customer",
+            email: user.email,
+            createdAt: new Date(),
+          };
+          await setDoc(doc(db, "users", user.uid), userData);
+          console.log("Created user document");
+        }
+      } catch (userError) {
+        console.log("User document issue:", userError);
+        // Continue with checkout even if user doc fails
+        userData = {
+          Name: user.displayName || "Customer",
+          email: user.email,
+        };
+      }
         
-        const orderId = generateOrderId();
-        const subtotal = totalAmt;
-        const discount = calculateDiscount(subtotal);
-        const discountedSubtotal = subtotal - discount;
-        const tax = calculateTax(discountedSubtotal);
-        const finalTotal = discountedSubtotal + tax + shippingCharge;
+      const orderId = generateOrderId();
+      const subtotal = totalAmt;
+      const discount = calculateDiscount(subtotal);
+      const discountedSubtotal = subtotal - discount;
+      const tax = calculateTax(discountedSubtotal);
+      const finalTotal = discountedSubtotal + tax + shippingCharge;
 
         // Prepare detailed items array
         const orderItems = products.map((product) => ({
@@ -208,12 +244,9 @@ const Cart = () => {
           }
         });
 
-      } catch (error) {
-        console.error("Error processing checkout: ", error);
-        alert("Failed to place order. Please try again.");
-      }
-    } else {
-      setShowLoginPrompt(true);
+    } catch (error) {
+      console.error("Error processing checkout: ", error);
+      alert("Failed to place order. Please try again.");
     }
   }, [user, products, totalAmt, shippingCharge, navigate, dispatch]);
 
