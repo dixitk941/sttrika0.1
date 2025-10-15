@@ -10,6 +10,7 @@ function Items({ currentItems }) {
           <div key={item._id} className="w-full">
             <Product
               _id={item._id}
+              id={item.id}
               img={item.img}
               productName={item.productName}
               price={item.price}

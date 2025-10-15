@@ -86,8 +86,24 @@ const Profile = () => {
             }
 
             // Try to fetch orders using utility function
+            console.log("Fetching orders for user:", user.uid);
             const ordersResult = await firestoreUtils.getUserOrders(user.uid);
+            console.log("Orders result:", ordersResult);
             if (ordersResult.success) {
+                console.log("Orders data:", ordersResult.data);
+                // Debug: Log the actual order structure
+                ordersResult.data.forEach((order, index) => {
+                    console.log(`Order ${index}:`, {
+                        id: order.id,
+                        orderId: order.orderId,
+                        total: order.total,
+                        pricingTotal: order.pricing?.total,
+                        createdAt: order.createdAt,
+                        date: order.date,
+                        itemsLength: order.items?.length,
+                        status: order.status
+                    });
+                });
                 setOrderHistory(ordersResult.data);
             } else {
                 console.warn("Could not fetch orders:", ordersResult.error);
@@ -368,73 +384,94 @@ const Profile = () => {
                             ) : (
                                 <div className="space-y-6">
                                     {orderHistory.map((order, index) => (
-                                        <div key={order.id} className="border border-gray-200 p-6 hover:shadow-md duration-300">
+                                        <div
+                                            key={order.id}
+                                            className="bg-gradient-to-br from-white via-gray-50 to-gray-100 border border-gray-200 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-7"
+                                        >
                                             {/* Order Header */}
-                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-gray-100">
-                                                <h3 className="font-titleFont font-medium text-primeColor">
-                                                    Order #{order.id ? String(order.id).slice(-8) : `ORD-${index + 1}`}
-                                                </h3>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-lg font-titleFont font-semibold text-primeColor">₹{String(order.total || 0)}</span>
-                                                    <span className="bg-green-100 text-green-800 text-xs px-2 py-1 font-medium rounded">
-                                                        Completed
+                                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-5 pb-4 border-b border-gray-100">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="inline-block bg-primeColor/10 text-primeColor font-bold px-3 py-1 rounded-lg text-xs tracking-wider">
+                                                        Order #{order.orderId ? String(order.orderId).slice(-8) : order.id ? String(order.id).slice(-8) : `ORD-${index + 1}`}
+                                                    </span>
+                                                    <span className="inline-block bg-green-100 text-green-700 font-semibold px-2 py-1 rounded text-xs ml-2">
+                                                        {order.status === 'completed' || order.status === 'delivered' ? 'Completed' : order.status || 'Pending'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-4 mt-2 md:mt-0">
+                                                    <span className="text-2xl font-bold text-primeColor">
+                                                        ₹{order.pricing?.total || order.total || 0}
                                                     </span>
                                                 </div>
                                             </div>
-                                            
+
                                             {/* Order Items */}
-                                            <div className="mb-4">
-                                                <h4 className="font-titleFont font-medium text-primeColor mb-3">Items Ordered:</h4>
-                                                <div className="space-y-3">
+                                            <div className="mb-5">
+                                                <h4 className="font-titleFont font-semibold text-primeColor mb-3 text-base">Items Ordered:</h4>
+                                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                                     {order.items && order.items.length > 0 ? (
                                                         order.items.map((item, itemIndex) => (
-                                                            <div key={itemIndex} className="flex items-center gap-4 p-3 bg-gray-50 rounded">
-                                                                <div className="flex-shrink-0">
+                                                            <div
+                                                                key={itemIndex}
+                                                                className="flex flex-col items-center bg-white border border-gray-100 rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow duration-200"
+                                                            >
+                                                                <div className="w-20 h-20 mb-3 flex-shrink-0">
                                                                     <img
-                                                                        src={item.image || 'https://via.placeholder.com/60x60?text=No+Image'}
+                                                                        src={item.image || 'https://via.placeholder.com/80x80?text=No+Image'}
                                                                         alt={item.name || 'Product'}
-                                                                        className="w-15 h-15 object-cover rounded border border-gray-200"
+                                                                        className="w-full h-full object-cover rounded-lg border border-gray-200"
                                                                         onError={(e) => {
-                                                                            e.target.src = 'https://via.placeholder.com/60x60?text=No+Image';
+                                                                            e.target.src = 'https://via.placeholder.com/80x80?text=No+Image';
                                                                         }}
                                                                     />
                                                                 </div>
-                                                                <div className="flex-grow min-w-0">
-                                                                    <h5 className="font-titleFont font-medium text-primeColor truncate">
+                                                                <div className="w-full text-center space-y-1">
+                                                                    <h5 className="font-titleFont font-medium text-primeColor text-sm min-h-[2.5em] overflow-hidden" style={{
+                                                                        display: '-webkit-box',
+                                                                        WebkitLineClamp: 2,
+                                                                        WebkitBoxOrient: 'vertical'
+                                                                    }}>
                                                                         {String(item.name || 'Product Name')}
                                                                     </h5>
-                                                                    <div className="flex items-center gap-4 mt-1">
-                                                                        <span className="text-sm text-lightText">
+                                                                    <div className="space-y-1">
+                                                                        <div className="text-xs text-lightText">
                                                                             Qty: {String(item.quantity || 1)}
-                                                                        </span>
+                                                                        </div>
                                                                         {item.price && (
-                                                                            <span className="text-sm font-medium text-primeColor">
-                                                                                ₹{String(item.price)}
-                                                                            </span>
+                                                                            <div className="text-sm font-semibold text-primeColor">
+                                                                                ₹{typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0}
+                                                                            </div>
                                                                         )}
                                                                         {item.colors && (
-                                                                            <span className="text-sm text-lightText">
+                                                                            <div className="text-xs text-lightText">
                                                                                 Color: {String(item.colors)}
-                                                                            </span>
+                                                                            </div>
                                                                         )}
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                         ))
                                                     ) : (
-                                                        <div className="text-sm text-lightText p-3 bg-gray-50 rounded">
+                                                        <div className="col-span-full text-sm text-lightText p-4 bg-gray-50 rounded text-center">
                                                             No item details available
                                                         </div>
                                                     )}
                                                 </div>
                                             </div>
-                                            
+
                                             {/* Order Footer */}
-                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm text-lightText pt-3 border-t border-gray-100">
-                                                <span>Order Date: {formatOrderDate(order.date || order.createdAt)}</span>
-                                                <span className="font-medium">
-                                                    Total Items: {order.items?.length || 0}
-                                                </span>
+                                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 text-xs text-lightText pt-4 border-t border-gray-100">
+                                                <span>Order Date: {formatOrderDate(order.createdAt || order.date || order.timestamp)}</span>
+                                                <div className="flex gap-4">
+                                                    <span className="font-medium">
+                                                        Total Items: {order.items?.length || order.itemCount || 0}
+                                                    </span>
+                                                    {order.pricing?.subtotal && (
+                                                        <span className="font-medium">
+                                                            Subtotal: ₹{order.pricing.subtotal}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     ))}
@@ -500,9 +537,10 @@ const Profile = () => {
                                         <span className="text-lightText font-bodyFont">Total Spent</span>
                                         <span className="font-titleFont font-medium text-blue-600">
                                             ₹{orderHistory.reduce((total, order) => {
-                                                const orderTotal = typeof order.total === 'number' ? order.total : 
-                                                                 typeof order.total === 'string' ? parseFloat(order.total) || 0 : 0;
-                                                return total + orderTotal;
+                                                const orderTotal = order.pricing?.total || order.total || 0;
+                                                const parsedTotal = typeof orderTotal === 'number' ? orderTotal : 
+                                                                   typeof orderTotal === 'string' ? parseFloat(orderTotal) || 0 : 0;
+                                                return total + parsedTotal;
                                             }, 0)}
                                         </span>
                                     </div>

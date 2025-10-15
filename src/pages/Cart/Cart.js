@@ -16,6 +16,35 @@ import {
   setDoc 
 } from "../../config/firebase";
 
+// Function to remove undefined values recursively and handle Date objects
+const sanitizeObject = (obj) => {
+  if (obj === null || obj === undefined) {
+    return null;
+  }
+  
+  // Handle Date objects - convert to Firestore Timestamp format
+  if (obj instanceof Date) {
+    return obj;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeObject(item)).filter(item => item !== null);
+  }
+  
+  if (typeof obj === 'object') {
+    const sanitized = {};
+    Object.keys(obj).forEach(key => {
+      const value = sanitizeObject(obj[key]);
+      if (value !== null && value !== undefined) {
+        sanitized[key] = value;
+      }
+    });
+    return sanitized;
+  }
+  
+  return obj;
+};
+
 const Cart = () => {
   const dispatch = useDispatch();
   const products = useSelector((state) => state.orebiReducer.products);
@@ -53,7 +82,9 @@ const Cart = () => {
   };
 
   const calculateItemTotal = (item) => {
-    return item.price * item.quantity;
+    const price = typeof item.price === 'number' ? item.price : 0;
+    const quantity = typeof item.quantity === 'number' ? item.quantity : 1;
+    return price * quantity;
   };
 
   const calculateTax = (subtotal) => {
@@ -79,6 +110,39 @@ const Cart = () => {
       console.error("User authentication incomplete:", user);
       alert("Authentication error. Please log out and log back in.");
       return;
+    }
+
+    // Validate cart items
+    if (!products || products.length === 0) {
+      alert("Your cart is empty. Please add some items before checkout.");
+      return;
+    }
+
+    // Log products for debugging
+    console.log("Products in cart:", products);
+
+    // Basic validation - most issues should be handled by Redux now
+    const hasInvalidProducts = products.some(product => {
+      const price = typeof product.price === 'string' ? parseFloat(product.price) : product.price;
+      const isInvalid = !product._id || !product.name || isNaN(price) || price <= 0 || product.quantity <= 0;
+      
+      if (isInvalid) {
+        console.log("Product validation details:", {
+          id: product._id || 'MISSING',
+          name: product.name || 'MISSING',
+          price: price,
+          quantity: product.quantity,
+          originalPrice: product.price
+        });
+      }
+      
+      return isInvalid;
+    });
+
+    if (hasInvalidProducts) {
+      console.warn("⚠️ Some products have validation issues, automatically fixing...");
+    } else {
+      console.log("✅ All products in cart are valid");
     }
 
     try {
@@ -110,28 +174,47 @@ const Cart = () => {
       }
         
       const orderId = generateOrderId();
-      const subtotal = totalAmt;
-      const discount = calculateDiscount(subtotal);
+      const subtotal = totalAmt || 0;
+      const discount = calculateDiscount(subtotal) || 0;
       const discountedSubtotal = subtotal - discount;
-      const tax = calculateTax(discountedSubtotal);
-      const finalTotal = discountedSubtotal + tax + shippingCharge;
+      const tax = calculateTax(discountedSubtotal) || 0;
+      const finalTotal = discountedSubtotal + tax + (shippingCharge || 0);
+
+        // Always normalize product data for consistency
+        const productsToUse = products.map(product => {
+          const price = typeof product.price === 'string' ? parseFloat(product.price) : product.price;
+          return {
+            ...product,
+            _id: product._id || product.id || `temp-${Date.now()}-${Math.random()}`,
+            name: product.name || product.productName || 'Unknown Product',
+            price: typeof price === 'number' && !isNaN(price) ? price : 0,
+            quantity: typeof product.quantity === 'number' ? product.quantity : 1
+          };
+        });
+
+        console.log("Final products used for checkout:", productsToUse);
 
         // Prepare detailed items array
-        const orderItems = products.map((product) => ({
-          productId: product._id || product.id,
-          name: product.name,
-          image: product.image,
-          price: product.price,
-          quantity: product.quantity,
-          colors: product.colors || product.color,
-          badge: product.badge,
-          itemTotal: calculateItemTotal(product),
-          // Additional product details
-          category: product.category || 'General',
-          brand: product.brand || 'Sttrika',
-          size: product.size || 'One Size',
-          sku: product.sku || `SKU-${product._id}`,
-        }));
+        const orderItems = productsToUse.map((product) => {
+          const price = typeof product.price === 'string' ? parseFloat(product.price) : product.price;
+          const finalPrice = typeof price === 'number' && !isNaN(price) ? price : 0;
+          
+          return {
+            productId: product._id || product.id || `temp-${Date.now()}`,
+            name: product.name || product.productName || 'Unknown Product',
+            image: product.image || product.img || '',
+            price: finalPrice,
+            quantity: product.quantity || 1,
+            colors: product.colors || product.color || 'Not specified',
+            badge: product.badge || false,
+            itemTotal: calculateItemTotal({ ...product, price: finalPrice }),
+            // Additional product details with proper fallbacks
+            category: product.category || 'General',
+            brand: product.brand || 'Sttrika',
+            size: product.size || 'One Size',
+            sku: product.sku || `SKU-${product._id || Date.now()}`,
+          };
+        });
 
         // Create comprehensive order object
         const orderData = {
@@ -140,11 +223,11 @@ const Cart = () => {
           orderNumber: orderId,
           
           // User Information
-          userId: user.uid,
-          userEmail: user.email,
+          userId: user.uid || 'unknown',
+          userEmail: user.email || 'unknown@example.com',
           customerInfo: {
             name: userData.Name || user.displayName || 'Customer',
-            email: user.email,
+            email: user.email || 'unknown@example.com',
             phone: userData.phone || '',
             address: {
               street: userData.address || '',
@@ -156,19 +239,19 @@ const Cart = () => {
 
           // Order Items
           items: orderItems,
-          itemCount: products.length,
-          totalQuantity: products.reduce((sum, item) => sum + item.quantity, 0),
+          itemCount: productsToUse.length,
+          totalQuantity: productsToUse.reduce((sum, item) => sum + (item.quantity || 1), 0),
 
           // Price Breakdown
           pricing: {
-            subtotal: subtotal,
-            discount: discount,
-            discountPercentage: discount > 0 ? Math.round((discount / subtotal) * 100) : 0,
-            discountedSubtotal: discountedSubtotal,
-            tax: tax,
+            subtotal: subtotal || 0,
+            discount: discount || 0,
+            discountPercentage: discount > 0 && subtotal > 0 ? Math.round((discount / subtotal) * 100) : 0,
+            discountedSubtotal: discountedSubtotal || 0,
+            tax: tax || 0,
             taxRate: 18, // GST rate in percentage
-            shippingCharge: shippingCharge,
-            total: finalTotal,
+            shippingCharge: shippingCharge || 0,
+            total: finalTotal || 0,
           },
 
           // Order Status & Tracking
@@ -183,17 +266,17 @@ const Cart = () => {
             },
             confirmed: {
               status: 'pending',
-              timestamp: null,
+              timestamp: '',
               message: 'Order confirmation pending'
             },
             shipped: {
               status: 'pending',
-              timestamp: null,
+              timestamp: '',
               message: 'Order will be shipped soon'
             },
             delivered: {
               status: 'pending',
-              timestamp: null,
+              timestamp: '',
               message: 'Order will be delivered'
             }
           },
@@ -206,7 +289,7 @@ const Cart = () => {
           // Additional Metadata
           metadata: {
             source: 'web',
-            browser: navigator.userAgent,
+            browser: navigator?.userAgent || 'Unknown browser',
             timestamp: Date.now(),
             currency: 'INR',
             locale: 'en-IN',
@@ -215,20 +298,32 @@ const Cart = () => {
           // Order Notes
           notes: {
             customer: '',
-            internal: `Order placed via web cart with ${products.length} items`,
+            internal: `Order placed via web cart with ${productsToUse.length} items`,
           }
         };
 
+        // Sanitize order data to remove undefined values
+        const sanitizedOrderData = sanitizeObject(orderData);
+
+        // Debug: Log order data before saving
+        console.log("Sanitized order data to be saved:", JSON.stringify(sanitizedOrderData, null, 2));
+
         // Save order to Firestore
-        const orderRef = await addDoc(collection(db, "orders"), orderData);
+        const orderRef = await addDoc(collection(db, "orders"), sanitizedOrderData);
+        console.log("Order saved with ID:", orderRef.id);
         
-        // Update order with Firestore document ID
-        await addDoc(collection(db, "orders", orderRef.id, "history"), {
-          action: 'order_created',
-          timestamp: new Date(),
-          details: 'Order successfully created and saved to database',
-          orderId: orderId,
-        });
+        // Update order with Firestore document ID (optional, continue even if this fails)
+        try {
+          await addDoc(collection(db, "orders", orderRef.id, "history"), {
+            action: 'order_created',
+            timestamp: new Date(),
+            details: 'Order successfully created and saved to database',
+            orderId: orderId,
+          });
+        } catch (historyError) {
+          console.warn("Failed to save order history:", historyError);
+          // Continue with checkout even if history fails
+        }
 
         console.log("Order created successfully:", orderId);
         
@@ -239,7 +334,7 @@ const Cart = () => {
         navigate("/paymentgateway", {
           state: {
             orderId: orderId,
-            orderData: orderData,
+            orderData: sanitizedOrderData,
             total: finalTotal
           }
         });

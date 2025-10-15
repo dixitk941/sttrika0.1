@@ -16,17 +16,20 @@ export const useProducts = () => {
         const q = query(productsRef, orderBy("createdAt", "desc"));
         const querySnapshot = await getDocs(q);
         
-        const productsData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          _id: doc.data()._id || doc.id, // Maintain compatibility with existing code
-          ...doc.data(),
-          // Convert Firestore data to match existing format
-          productName: doc.data().name,
-          img: doc.data().image, // Map image field to img for compatibility
-          color: doc.data().colors?.join(", ") || "Available in multiple colors",
-          des: doc.data().description || "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
-          badge: doc.data().badge === "New" || doc.data().badge === "Sale" || doc.data().badge === "Hot" || doc.data().badge === "Best Seller"
-        }));
+        const productsData = querySnapshot.docs.map(doc => {
+          const docData = doc.data();
+          return {
+            id: doc.id,
+            _id: doc.id, // Use Firestore doc ID consistently as _id
+            ...docData,
+            // Convert Firestore data to match existing format
+            productName: docData.name,
+            img: docData.image, // Map image field to img for compatibility
+            color: docData.colors?.join(", ") || "Available in multiple colors",
+            des: docData.description || "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
+            badge: docData.badge === "New" || docData.badge === "Sale" || docData.badge === "Hot" || docData.badge === "Best Seller"
+          };
+        });
         
         setProducts(productsData);
         setError(null);
@@ -61,16 +64,19 @@ export const useProductsByCategory = (category) => {
         
         const querySnapshot = await getDocs(q);
         
-        const productsData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          _id: doc.data()._id || doc.id,
-          ...doc.data(),
-          productName: doc.data().name,
-          img: doc.data().image, // Map image field to img for compatibility
-          color: doc.data().colors?.join(", ") || "Available in multiple colors",
-          des: doc.data().description || "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
-          badge: doc.data().badge === "New" || doc.data().badge === "Sale" || doc.data().badge === "Hot" || doc.data().badge === "Best Seller"
-        }));
+        const productsData = querySnapshot.docs.map(doc => {
+          const docData = doc.data();
+          return {
+            id: doc.id,
+            _id: doc.id, // Use Firestore doc ID consistently as _id
+            ...docData,
+            productName: docData.name,
+            img: docData.image, // Map image field to img for compatibility
+            color: docData.colors?.join(", ") || "Available in multiple colors",
+            des: docData.description || "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
+            badge: docData.badge === "New" || docData.badge === "Sale" || docData.badge === "Hot" || docData.badge === "Best Seller"
+          };
+        });
         
         setProducts(productsData);
         setError(null);
@@ -107,31 +113,37 @@ export const useFeaturedProducts = (limit = 8) => {
         
         const querySnapshot = await getDocs(q);
         
-        let productsData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          _id: doc.data()._id || doc.id,
-          ...doc.data(),
-          productName: doc.data().name,
-          img: doc.data().image, // Map image field to img for compatibility
-          color: doc.data().colors?.join(", ") || "Available in multiple colors",
-          des: doc.data().description || "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
-          badge: doc.data().badge === "New" || doc.data().badge === "Sale" || doc.data().badge === "Hot" || doc.data().badge === "Best Seller"
-        }));
+        let productsData = querySnapshot.docs.map(doc => {
+          const docData = doc.data();
+          return {
+            id: doc.id,
+            _id: doc.id, // Use Firestore doc ID consistently as _id
+            ...docData,
+            productName: docData.name,
+            img: docData.image, // Map image field to img for compatibility
+            color: docData.colors?.join(", ") || "Available in multiple colors",
+            des: docData.description || "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
+            badge: docData.badge === "New" || docData.badge === "Sale" || docData.badge === "Hot" || docData.badge === "Best Seller"
+          };
+        });
 
         // If no featured products, get latest products
         if (productsData.length === 0) {
           const allProductsQuery = query(productsRef, orderBy("createdAt", "desc"));
           const allProductsSnapshot = await getDocs(allProductsQuery);
-          productsData = allProductsSnapshot.docs.slice(0, limit).map(doc => ({
-            id: doc.id,
-            _id: doc.data()._id || doc.id,
-            ...doc.data(),
-            productName: doc.data().name,
-            img: doc.data().image, // Map image field to img for compatibility
-            color: doc.data().colors?.join(", ") || "Available in multiple colors",
-            des: doc.data().description || "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
-            badge: doc.data().badge === "New" || doc.data().badge === "Sale" || doc.data().badge === "Hot" || doc.data().badge === "Best Seller"
-          }));
+          productsData = allProductsSnapshot.docs.slice(0, limit).map(doc => {
+            const docData = doc.data();
+            return {
+              id: doc.id,
+              _id: doc.id, // Use Firestore doc ID consistently as _id
+              ...docData,
+              productName: docData.name,
+              img: docData.image, // Map image field to img for compatibility
+              color: docData.colors?.join(", ") || "Available in multiple colors",
+              des: docData.description || "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
+              badge: docData.badge === "New" || docData.badge === "Sale" || docData.badge === "Hot" || docData.badge === "Best Seller"
+            };
+          });
         }
 
         setProducts(productsData.slice(0, limit));
@@ -169,34 +181,49 @@ export const useProductsByBadge = (badge, limit = 4) => {
         
         const querySnapshot = await getDocs(q);
         
-        let productsData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          _id: doc.data()._id || doc.id,
-          ...doc.data(),
-          productName: doc.data().name,
-          img: doc.data().image, // Map image field to img for compatibility
-          color: doc.data().colors?.join(", ") || "Available in multiple colors",
-          des: doc.data().description || "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
-          badge: true
-        }));
+        let productsData = querySnapshot.docs.map(doc => {
+          const docData = doc.data();
+          return {
+            id: doc.id,
+            _id: doc.id, // Use Firestore doc ID consistently as _id
+            ...docData,
+            productName: docData.name,
+            img: docData.image, // Map image field to img for compatibility
+            color: docData.colors?.join(", ") || "Available in multiple colors",
+            des: docData.description || "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
+            badge: true
+          };
+        });
 
-        // If no products with specific badge, get random products
+        // If no products with specific badge, get latest products
         if (productsData.length === 0) {
           const allProductsQuery = query(productsRef, orderBy("createdAt", "desc"));
           const allProductsSnapshot = await getDocs(allProductsQuery);
-          productsData = allProductsSnapshot.docs.slice(0, limit).map(doc => ({
-            id: doc.id,
-            _id: doc.data()._id || doc.id,
-            ...doc.data(),
-            productName: doc.data().name,
-            img: doc.data().image, // Map image field to img for compatibility
-            color: doc.data().colors?.join(", ") || "Available in multiple colors",
-            des: doc.data().description || "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
-            badge: true
-          }));
+          productsData = allProductsSnapshot.docs.slice(0, limit).map(doc => {
+            const docData = doc.data();
+            return {
+              id: doc.id,
+              _id: doc.id, // Use Firestore doc ID consistently as _id
+              ...docData,
+              productName: docData.name,
+              img: docData.image, // Map image field to img for compatibility
+              color: docData.colors?.join(", ") || "Available in multiple colors",
+              des: docData.description || "Lorem ipsum dolor sit amet consectetur adipisicing elit.",
+              badge: true
+            };
+          });
         }
 
-        setProducts(productsData.slice(0, limit));
+        // Ensure no duplicates based on _id and name
+        const uniqueProductsData = productsData.filter((product, index, self) => {
+          return index === self.findIndex(p => 
+            p._id === product._id || 
+            (p.productName === product.productName && p.price === product.price)
+          );
+        });
+
+        console.log(`useProductsByBadge(${badge}): Found ${productsData.length} products, ${uniqueProductsData.length} unique`);
+        setProducts(uniqueProductsData.slice(0, limit));
         setError(null);
       } catch (err) {
         console.error("Error fetching products by badge:", err);

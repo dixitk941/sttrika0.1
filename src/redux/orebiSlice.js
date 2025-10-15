@@ -10,13 +10,19 @@ export const orebiSlice = createSlice({
   initialState,
   reducers: {
     addToCart: (state, action) => {
+      // Ensure the product has a valid ID
+      const productToAdd = {
+        ...action.payload,
+        _id: action.payload._id || action.payload.id || `cart-${Date.now()}-${Math.random()}`
+      };
+      
       const item = state.products.find(
-        (item) => item._id === action.payload._id
+        (item) => item._id === productToAdd._id
       );
       if (item) {
-        item.quantity += action.payload.quantity;
+        item.quantity += productToAdd.quantity;
       } else {
-        state.products.push(action.payload);
+        state.products.push(productToAdd);
       }
     },
     increaseQuantity: (state, action) => {

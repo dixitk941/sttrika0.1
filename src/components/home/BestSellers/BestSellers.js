@@ -28,11 +28,16 @@ const BestSellers = () => {
     );
   }
 
+  // Filter out any potential duplicates based on _id
+  const uniqueProducts = products.filter((product, index, self) => 
+    index === self.findIndex(p => p._id === product._id)
+  );
+
   return (
     <div className="w-full pb-20">
       <Heading heading="Our Bestsellers" />
       <div className="w-full grid grid-cols-1 md:grid-cols-2 lgl:grid-cols-3 xl:grid-cols-4 gap-10">
-        {products.map((product) => (
+        {uniqueProducts.map((product) => (
           <Product
             key={product._id}
             _id={product._id}

@@ -11,11 +11,18 @@ import { addToCart } from "../../../redux/orebiSlice";
 
 const Product = (props) => {
   const dispatch = useDispatch();
-  const _id = props.productName;
-  const idString = (_id) => {
-    return String(_id).toLowerCase().split(" ").join("");
+  const productId = props._id || props.id; // Use actual product ID
+  const productName = props.productName;
+  
+  // Debug log to check ID
+  if (!productId) {
+    console.warn("Product missing ID:", { productName, props: { _id: props._id, id: props.id } });
+  }
+  
+  const idString = (name) => {
+    return String(name).toLowerCase().split(" ").join("");
   };
-  const rootId = idString(_id);
+  const rootId = idString(productName); // Use product name for URL routing
 
   const navigate = useNavigate();
   const productItem = props;
@@ -44,19 +51,20 @@ const Product = (props) => {
               </span>
             </li>
             <li
-              onClick={() =>
-                dispatch(
-                  addToCart({
-                    _id: props._id,
-                    name: props.productName,
-                    quantity: 1,
-                    image: props.img,
-                    badge: props.badge,
-                    price: props.price,
-                    colors: props.color,
-                  })
-                )
-              }
+              onClick={() => {
+                const cartItem = {
+                  _id: productId,
+                  name: props.productName,
+                  quantity: 1,
+                  image: props.img,
+                  badge: props.badge,
+                  price: typeof props.price === 'string' ? parseFloat(props.price) : props.price,
+                  colors: props.color,
+                };
+                
+                console.log("Adding to cart:", cartItem);
+                dispatch(addToCart(cartItem));
+              }}
               className="text-[#767676] hover:text-primeColor text-sm font-normal border-b-[1px] border-b-gray-200 hover:border-b-primeColor flex items-center justify-end gap-2 hover:cursor-pointer pb-1 duration-300 w-full"
             >
               Add to Cart

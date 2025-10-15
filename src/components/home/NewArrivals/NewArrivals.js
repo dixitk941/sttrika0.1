@@ -9,10 +9,22 @@ import SamplePrevArrow from "./SamplePrevArrow";
 const NewArrivals = () => {
   const { products, loading, error } = useProductsByBadge("New", 8);
 
+  // Debug: Log the products to see what we're getting
+  console.log("NewArrivals - Raw products:", products);
+  console.log("NewArrivals - Product IDs:", products.map(p => ({ id: p._id, name: p.productName || p.name })));
+
+  // Filter out any potential duplicates based on _id
+  const uniqueProducts = products.filter((product, index, self) => 
+    index === self.findIndex(p => p._id === product._id)
+  );
+
+  console.log("NewArrivals - Unique products:", uniqueProducts);
+  console.log("NewArrivals - Unique count:", uniqueProducts.length);
+
   const settings = {
-    infinite: true,
+    infinite: uniqueProducts.length > 4, // Only enable infinite scroll if we have more items than visible
     speed: 500,
-    slidesToShow: 4,
+    slidesToShow: Math.min(4, uniqueProducts.length), // Don't show more slides than products
     slidesToScroll: 1,
     nextArrow: <SampleNextArrow />,
     prevArrow: <SamplePrevArrow />,
@@ -20,17 +32,17 @@ const NewArrivals = () => {
       {
         breakpoint: 1025,
         settings: {
-          slidesToShow: 3,
+          slidesToShow: Math.min(3, uniqueProducts.length),
           slidesToScroll: 1,
-          infinite: true,
+          infinite: uniqueProducts.length > 3,
         },
       },
       {
         breakpoint: 769,
         settings: {
-          slidesToShow: 2,
-          slidesToScroll: 2,
-          infinite: true,
+          slidesToShow: Math.min(2, uniqueProducts.length),
+          slidesToScroll: 1,
+          infinite: uniqueProducts.length > 2,
         },
       },
       {
@@ -38,7 +50,7 @@ const NewArrivals = () => {
         settings: {
           slidesToShow: 1,
           slidesToScroll: 1,
-          infinite: true,
+          infinite: uniqueProducts.length > 1,
         },
       },
     ],
@@ -69,10 +81,12 @@ const NewArrivals = () => {
   return (
     <div className="w-full pb-16">
       <Heading heading="New Arrivals" />
-      <Slider {...settings}>
-        {products.map((product) => (
-          <div key={product._id} className="px-2">
+      {uniqueProducts.length <= 2 ? (
+        // Use grid layout for few products to avoid slider duplication
+        <div className="w-full grid grid-cols-1 md:grid-cols-2 lgl:grid-cols-3 xl:grid-cols-4 gap-10">
+          {uniqueProducts.map((product) => (
             <Product
+              key={product._id}
               _id={product._id}
               img={product.image}
               productName={product.productName || product.name}
@@ -81,9 +95,26 @@ const NewArrivals = () => {
               badge={product.badge}
               des={product.des || product.description}
             />
-          </div>
-        ))}
-      </Slider>
+          ))}
+        </div>
+      ) : (
+        // Use slider for more products
+        <Slider {...settings}>
+          {uniqueProducts.map((product) => (
+            <div key={product._id} className="px-2">
+              <Product
+                _id={product._id}
+                img={product.image}
+                productName={product.productName || product.name}
+                price={product.price}
+                color={product.color}
+                badge={product.badge}
+                des={product.des || product.description}
+              />
+            </div>
+          ))}
+        </Slider>
+      )}
     </div>
   );
 };

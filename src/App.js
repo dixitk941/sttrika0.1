@@ -9,7 +9,7 @@ import {
 import Footer from "./components/home/Footer/Footer";
 import FooterBottom from "./components/home/Footer/FooterBottom";
 import Header from "./components/home/Header/Header";
-import SpecialCase from "./components/SpecialCase/SpecialCase";
+// import SpecialCase from "./components/SpecialCase/SpecialCase"; // Hidden - using new mobile navigation
 import SignIn from "./pages/Account/SignIn";
 import SignUp from "./pages/Account/SignUp";
 import Cart from "./pages/Cart/Cart";
@@ -20,14 +20,17 @@ import ProductDetails from "./pages/ProductDetails/ProductDetails";
 import Shop from "./pages/Shop/Shop";
 import Profile from "./components/Profile/Profile";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
+import Notifications from "./pages/Notifications/Notifications";
 
 const Layout = () => {
   return (
     <div>
       <Header />
-      <SpecialCase />
+      {/* <SpecialCase /> - Hidden as we now have better mobile navigation */}
       <ScrollRestoration />
-      <Outlet />
+      <div className="pb-20 lg:pb-0"> {/* Add bottom padding only on mobile for fixed bottom nav */}
+        <Outlet />
+      </div>
       <Footer />
       <FooterBottom />
     </div>
@@ -46,6 +49,7 @@ const router = createBrowserRouter(
         <Route path="/cart" element={<Cart />}></Route>
         <Route path="/paymentgateway" element={<Payment />}></Route>
         <Route path="/profile" element={<Profile />}></Route>
+        <Route path="/notifications" element={<Notifications />}></Route>
       </Route>
       <Route path="/signup" element={<SignUp />}></Route>
       <Route path="/signin" element={<SignIn />}></Route>

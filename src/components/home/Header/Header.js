@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { HiOutlineMenuAlt4 } from "react-icons/hi";
-import { FaTimes, FaSearch, FaUser, FaCaretDown, FaShoppingCart, FaSignOutAlt, FaSignInAlt, FaUserPlus } from "react-icons/fa";
+import { FaTimes, FaSearch, FaUser, FaCaretDown, FaShoppingCart, FaSignOutAlt, FaSignInAlt, FaUserPlus, FaBell } from "react-icons/fa";
 import { AiOutlineHome } from "react-icons/ai";
 import { FaStore } from "react-icons/fa";
 import { Link, NavLink, useNavigate } from "react-router-dom";
@@ -226,8 +226,8 @@ const Header = () => {
               </motion.div>
             )}
 
-            {/* Mobile Layout: Logo and Search */}
-            <div className="lg:hidden flex items-center justify-between w-full h-16 px-2">
+            {/* Mobile Layout: Logo, Search and Notifications */}
+            <div className="lg:hidden flex items-center justify-between w-full h-16 px-4">
               
               {/* Logo */}
               <Link to="/" className={`flex-shrink-0 transition-opacity duration-200 ${showMobileSearch ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
@@ -237,22 +237,35 @@ const Header = () => {
                   transition={{ duration: 0.5 }}
                 >
                   <Image 
-                    className="h-8 w-auto object-contain" 
+                    className="h-10 w-auto object-contain" 
                     imgSrc={logoLight} 
                   />
                 </motion.div>
               </Link>
               
-              {/* Search Button with Label (Windows 11 style) */}
-              <div className={`transition-opacity duration-200 ${showMobileSearch ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+              {/* Search Bar (Always Visible) */}
+              <div className={`flex-1 mx-4 transition-opacity duration-200 ${showMobileSearch ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
                 <button
                   onClick={() => setShowMobileSearch(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors duration-200 border border-gray-300"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 bg-gray-100/80 hover:bg-gray-200/80 rounded-full transition-all duration-200 border border-gray-200"
                   aria-label="Search"
                 >
-                  <FaSearch className="w-4 h-4 text-[#6D6D6D]" />
-                  <span className="text-sm text-[#6D6D6D] font-medium">Search</span>
+                  <FaSearch className="w-4 h-4 text-[#6D6D6D] flex-shrink-0" />
+                  <span className="text-sm text-[#6D6D6D] font-medium truncate">Search products...</span>
                 </button>
+              </div>
+
+              {/* Notifications Icon */}
+              <div className={`flex items-center gap-2 transition-opacity duration-200 ${showMobileSearch ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                <Link to="/notifications">
+                  <div className="relative p-2.5 rounded-full bg-gray-100/80 hover:bg-gray-200/80 transition-colors duration-200">
+                    <FaBell className="w-5 h-5 text-[#6D6D6D]" />
+                    {/* Notification Badge */}
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                      3
+                    </span>
+                  </div>
+                </Link>
               </div>
             </div>
 
@@ -385,19 +398,20 @@ const Header = () => {
               )}
             </div>
 
-            {/* Mobile Search Icon - Only visible on mobile when search is not active */}
-            <div className={`lg:hidden transition-opacity duration-200 ${showMobileSearch ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-              <button
-                onClick={() => setShowMobileSearch(true)}
-                className="p-2 rounded-lg text-[#6D6D6D] hover:text-[#262626] hover:bg-gray-50 transition-colors duration-200"
-                aria-label="Search"
-              >
-                <FaSearch className="w-5 h-5" />
-              </button>
-            </div>
 
-            {/* User Profile & Cart Section - Hidden on mobile, visible on desktop */}
+
+            {/* Notifications, User Profile & Cart Section - Hidden on mobile, visible on desktop */}
             <div className={`hidden lg:flex items-center gap-4 transition-opacity duration-200 ${showMobileSearch ? 'lg:opacity-100 opacity-0 pointer-events-none lg:pointer-events-auto' : 'opacity-100'}`}>
+              
+              {/* Desktop Notifications */}
+              <Link to="/notifications">
+                <div className="relative p-2 rounded-lg hover:bg-gray-50 transition-colors duration-300 group">
+                  <FaBell className="w-6 h-6 text-[#6D6D6D] group-hover:text-[#262626] transition-colors duration-300" />
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                    3
+                  </span>
+                </div>
+              </Link>
               
               {/* Dynamic User Profile Dropdown */}
               <div className="relative" ref={userRef}>
@@ -621,7 +635,7 @@ const Header = () => {
 
       {/* Mobile Bottom Navigation */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
-        <div className="grid grid-cols-4 gap-1 py-2">
+        <div className="grid grid-cols-5 gap-1 py-2">
           {navBarList.map(({ _id, title, link }) => (
             <NavLink
               key={_id}
@@ -650,29 +664,94 @@ const Header = () => {
             </NavLink>
           ))}
           
+          {/* Notifications Bottom Nav Item */}
+          <NavLink 
+            to="/notifications" 
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center py-2 px-1 text-xs transition-colors duration-200 ${
+                isActive
+                  ? 'text-[#262626]'
+                  : 'text-[#6D6D6D] hover:text-[#262626]'
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <div className={`relative mb-1 transition-all duration-200 ${
+                  isActive ? 'text-[#262626]' : 'text-[#6D6D6D]'
+                }`}>
+                  <FaBell className="w-5 h-5" />
+                  <span className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                    3
+                  </span>
+                </div>
+                <span className="font-medium">Alerts</span>
+                <div className={`w-6 h-0.5 rounded-full mt-1 transition-all duration-200 ${
+                  isActive ? 'bg-[#262626]' : 'bg-transparent'
+                }`} />
+              </>
+            )}
+          </NavLink>
+          
           {/* Cart Bottom Nav Item */}
-          <Link to="/cart" className="flex flex-col items-center justify-center py-2 px-1 text-xs transition-colors duration-200 text-[#6D6D6D] hover:text-[#262626]">
-            <div className="relative mb-1">
-              <FaShoppingCart className="w-5 h-5" />
-              {products.length > 0 && (
-                <span className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
-                  {products.length > 9 ? '9+' : products.length}
-                </span>
-              )}
-            </div>
-            <span className="font-medium">Cart</span>
-          </Link>
+          <NavLink 
+            to="/cart" 
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center py-2 px-1 text-xs transition-colors duration-200 ${
+                isActive
+                  ? 'text-[#262626]'
+                  : 'text-[#6D6D6D] hover:text-[#262626]'
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <div className={`relative mb-1 transition-all duration-200 ${
+                  isActive ? 'text-[#262626]' : 'text-[#6D6D6D]'
+                }`}>
+                  <FaShoppingCart className="w-5 h-5" />
+                  {products.length > 0 && (
+                    <span className="absolute -top-2 -right-2 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+                      {products.length > 9 ? '9+' : products.length}
+                    </span>
+                  )}
+                </div>
+                <span className="font-medium">Cart</span>
+                <div className={`w-6 h-0.5 rounded-full mt-1 transition-all duration-200 ${
+                  isActive ? 'bg-[#262626]' : 'bg-transparent'
+                }`} />
+              </>
+            )}
+          </NavLink>
           
           {/* Profile Bottom Nav Item */}
-          <Link to="/profile" className="flex flex-col items-center justify-center py-2 px-1 text-xs transition-colors duration-200 text-[#6D6D6D] hover:text-[#262626]">
-            <FaUser className="w-5 h-5 mb-1" />
-            <span className="font-medium">Profile</span>
-          </Link>
+          <NavLink 
+            to="/profile" 
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center py-2 px-1 text-xs transition-colors duration-200 ${
+                isActive
+                  ? 'text-[#262626]'
+                  : 'text-[#6D6D6D] hover:text-[#262626]'
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <div className={`mb-1 transition-all duration-200 ${
+                  isActive ? 'text-[#262626]' : 'text-[#6D6D6D]'
+                }`}>
+                  <FaUser className="w-5 h-5" />
+                </div>
+                <span className="font-medium">Profile</span>
+                <div className={`w-6 h-0.5 rounded-full mt-1 transition-all duration-200 ${
+                  isActive ? 'bg-[#262626]' : 'bg-transparent'
+                }`} />
+              </>
+            )}
+          </NavLink>
         </div>
       </div>
 
-      {/* Mobile Bottom Spacer */}
-      <div className="lg:hidden h-16" />
     </>
   );
 };
